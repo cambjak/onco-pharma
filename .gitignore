@@ -1,0 +1,9 @@
+.DS_Store
+pdfs/
+*.pdf
+*.pptx
+*.ppt
+*.docx
+*.txt
+__pycache__/
+*.pyc
