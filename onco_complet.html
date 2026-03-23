@@ -8985,7 +8985,7 @@ init();
   <!-- ─── FICHE DE GARDE ──────────────────────────────────────────────────── -->
   <div id="garde-panel">
     <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;">
-      <h2 style="color:#f85149;"> Fiche de Garde – Onco-Hématologie</h2>
+      <h2 style="color:#f85149;"> Fiche de Garde </h2>
       <button onclick="window.print()" style="padding:6px 14px;background:#21262d;border:1px solid #30363d;border-radius:8px;color:#8b949e;font-size:0.78rem;cursor:pointer;">Imprimer</button>
     </div>
     <div class="garde-grid">
@@ -9164,7 +9164,7 @@ init();
         </div>
       </div>
 
-      <!-- DOSES SPÉCIALES GARDE -->
+      <!-- DOSES URGENCES -->
       <div class="garde-card garde-blue">
         <div class="garde-card-head">Doses de référence rapides — Garde</div>
         <table class="garde-table">
@@ -9608,7 +9608,7 @@ function buildHomePanel() {
   const totalCards = 166;
   const knownPct   = Math.round((knownCount / totalCards) * 100);
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Bonne matinée' : hour < 18 ? 'Bon après-midi' : 'Bonne soirée';
+  const greeting = hour < 12 ? 'ACCUEIL - ONCOPHARMACIE LE BUNDLE POUR SLAY' : hour < 18 ? 'Bon après-midi' : 'Bonne soirée';
 
   const statClass = dueToday > 10 ? 'home-stat-urgent' : dueToday === 0 ? 'home-stat-ok' : '';
 

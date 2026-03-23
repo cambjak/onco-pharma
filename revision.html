@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Protocoles – Onco-Pharmacologie</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1117'/><g transform='translate(16,16)' stroke='%233fb950' stroke-width='1.5' fill='none'><ellipse rx='12' ry='4.5'/><ellipse rx='12' ry='4.5' transform='rotate(60)'/><ellipse rx='12' ry='4.5' transform='rotate(120)'/><circle r='2.5' fill='%233fb950'/></g></svg>">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100vh; overflow: hidden; background: #0d1117; font-family: system-ui, -apple-system, sans-serif; }
+
+/*  BARRE D'ONGLETS  */
+.tabbar {
+  display: flex; align-items: center; gap: 4px;
+  height: 50px; padding: 0 20px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  user-select: none;
+}
+.tabbar-logo {
+  font-size: 0.9rem; font-weight: 800; color: #58a6ff;
+  margin-right: 20px; white-space: nowrap; letter-spacing: -0.3px;
+}
+.tab {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 18px; border-radius: 8px; border: none;
+  background: transparent; color: #8b949e;
+  cursor: pointer; font-size: 0.85rem; font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.tab:hover { background: #21262d; color: #c9d1d9; }
+.tab.active { background: #1f6feb; color: #ffffff; }
+.tab .emoji { font-size: 1rem; }
+
+/*  ZONE IFRAMES  */
+.frames { position: relative; height: calc(100vh - 50px); }
+iframe {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  border: none; display: none;
+}
+iframe.active { display: block; }
+
+/*  PROTOCOLES PANEL  */
+#proto-panel {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: none; overflow-y: auto;
+  background: #0d1117; color: #c9d1d9;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+#proto-panel.active { display: block; }
+
+.proto-header {
+  position: sticky; top: 0; z-index: 20;
+  background: #0d1117; border-bottom: 1px solid #21262d;
+  padding: 14px 24px 10px;
+}
+.proto-header h2 { font-size: 1rem; font-weight: 700; color: #e6edf3; margin-bottom: 10px; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  padding: 4px 12px; border-radius: 20px; border: 1px solid #30363d;
+  background: #161b22; color: #8b949e;
+  cursor: pointer; font-size: 0.75rem; font-weight: 600;
+  transition: all 0.15s;
+}
+.chip:hover { border-color: #58a6ff; color: #58a6ff; }
+.chip.active { background: #1f6feb22; border-color: #1f6feb; color: #58a6ff; }
+
+.proto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr));
+  gap: 16px; padding: 16px 24px 32px;
+}
+
+.cancer-card {
+  background: #161b22; border: 1px solid #21262d;
+  border-radius: 12px; overflow: hidden;
+  transition: border-color 0.2s;
+}
+.cancer-card:hover { border-color: #30363d; }
+.cancer-card.hidden { display: none; }
+
+.cc-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #21262d;
+}
+.cc-head .cc-icon { font-size: 1.3rem; }
+.cc-head .cc-title { font-size: 0.95rem; font-weight: 700; color: #e6edf3; }
+.cc-head .cc-sub { font-size: 0.72rem; color: #8b949e; margin-top: 2px; }
+.fiche-link-btn {
+  margin-left: auto; padding: 3px 10px; border-radius: 6px;
+  border: 1px solid #30363d; background: #21262d;
+  color: #58a6ff; font-size: 0.68rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
+}
+.fiche-link-btn:hover { background: #1f6feb22; border-color: #58a6ff; }
+
+.proto-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; table-layout: fixed; }
+.proto-table tr { border-bottom: 1px solid #21262d; }
+.proto-table tr:last-child { border-bottom: none; }
+.proto-table td { padding: 8px 12px; vertical-align: top; line-height: 1.5; word-break: break-word; overflow-wrap: anywhere; min-width: 0; }
+.proto-table td:first-child {
+  width: 96px; min-width: 96px; max-width: 96px; font-weight: 700; font-size: 0.7rem;
+  padding-right: 4px; word-break: break-word; white-space: normal;
+}
+.proto-table td:last-child { width: auto; }
+
+/* Badges ligne */
+.l1  { color: #3fb950; }
+.l2  { color: #58a6ff; }
+.l3  { color: #a5d6ff; }
+.adj { color: #e3b341; }
+.po  { color: #d2a8ff; }
+.neo { color: #ffa657; }
+.bcg { color: #81a4c8; }
+
+.proto-name { font-weight: 700; color: #e6edf3; display: block; margin-bottom: 2px; }
+.proto-doses { color: #8b949e; font-size: 0.72rem; display: block; }
+.proto-cond {
+  display: inline-block; margin-top: 3px;
+  background: #1f6feb22; color: #58a6ff;
+  border-radius: 4px; padding: 1px 6px;
+  font-size: 0.68rem; font-weight: 700;
+}
+.proto-warn {
+  display: inline-block; margin-top: 3px;
+  background: #da363322; color: #f85149;
+  border-radius: 4px; padding: 1px 6px;
+  font-size: 0.68rem; font-weight: 700;
+}
+.proto-bio {
+  display: inline-block; margin-top: 3px;
+  background: #a371f722; color: #d2a8ff;
+  border-radius: 4px; padding: 1px 6px;
+  font-size: 0.68rem; font-weight: 700;
+}
+
+/* Search */
+.proto-search-wrap { margin-bottom: 10px; }
+.proto-search {
+  width: 100%; max-width: 340px;
+  background: #21262d; border: 1px solid #30363d; border-radius: 8px;
+  color: #c9d1d9; padding: 7px 12px; font-size: 0.83rem;
+  outline: none;
+}
+.proto-search:focus { border-color: #1f6feb; }
+
+/* Nouvelles classes lignes */
+.bilan { color: #4db6ac; }   /* teal = bilan pré-thérapeutique */
+.monitor { color: #79c0ff; } /* bleu clair = monitoring */
+.prereq { color: #c98fde; }  /* violet clair = prérequis/éligibilité */
+
+/*  Collapse bilan/monitoring  */
+.collapsible-row td { cursor: default; }
+.collapse-toggle {
+  background: none; border: none; color: #484f58;
+  font-size: 0.65rem; cursor: pointer; padding: 0 4px;
+  vertical-align: middle; opacity: 0.6;
+  transition: opacity 0.15s, transform 0.2s;
+}
+.collapse-toggle:hover { opacity: 1; }
+.collapse-toggle.open { transform: rotate(90deg); }
+.collapsible-content { overflow: hidden; transition: max-height 0.25s ease; }
+.collapsible-content.hidden-row { display: none; }
+
+/*  Back to top  */
+#proto-top-btn {
+  position: fixed; bottom: 24px; right: 24px; z-index: 100;
+  background: #1f6feb; color: white; border: none;
+  border-radius: 50%; width: 40px; height: 40px;
+  font-size: 1.1rem; cursor: pointer; display: none;
+  align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  transition: opacity 0.2s, background 0.15s;
+}
+#proto-top-btn:hover { background: #388bfd; }
+#proto-top-btn.visible { display: flex; }
+
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: white !important; overflow: visible !important; }
+  .tabbar { display: none !important; }
+  .frames { height: auto !important; position: static !important; }
+  iframe { display: none !important; }
+  #proto-panel { display: block !important; position: static !important;
+    width: 100% !important; height: auto !important; overflow: visible !important; background: white !important; color: black !important; }
+  .proto-header { position: static !important; background: white !important; }
+  .filter-chips, .proto-search-wrap, #proto-top-btn, .collapse-toggle { display: none !important; }
+  .proto-grid { display: block !important; columns: 2; column-gap: 14px; padding: 0 !important; }
+  .cancer-card { break-inside: avoid; page-break-inside: avoid; margin-bottom: 14px;
+    display: inline-block; width: 100%; border: 1px solid #ccc !important; background: white !important; }
+  .proto-table td { color: black !important; }
+  .collapsible-content.hidden-row { display: block !important; }
+  .cc-title { color: black !important; } .cc-sub { color: #555 !important; }
+  .cancer-card.hidden { display: inline-block !important; }
+  @page { margin: 1.2cm; size: A4; }
+}
+
+/* CHECKLISTS & GARDE PANELS */
+#checklist-panel, #garde-panel {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: none; overflow-y: auto;
+  background: #0d1117; color: #c9d1d9;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+#checklist-panel.active, #garde-panel.active { display: block; }
+
+.panel-header {
+  position: sticky; top: 0; z-index: 20;
+  background: #0d1117; border-bottom: 1px solid #21262d;
+  padding: 14px 24px 14px;
+}
+.panel-header h2 { font-size: 1rem; font-weight: 700; color: #e6edf3; }
+
+/* Checklists */
+.cl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr));
+  gap: 20px; padding: 20px 24px 40px;
+}
+.cl-card {
+  background: #161b22; border: 1px solid #21262d;
+  border-radius: 14px; overflow: hidden;
+}
+.cl-card-head {
+  padding: 14px 18px;
+  border-bottom: 3px solid var(--cl-color, #1f6feb);
+  display: flex; align-items: center; gap: 10px;
+}
+.cl-card-head h3 { font-size: 0.9rem; font-weight: 700; color: #e6edf3; }
+.cl-card-head .cl-badge {
+  font-size: 0.68rem; padding: 2px 8px; border-radius: 10px;
+  background: var(--cl-color, #1f6feb)22; color: var(--cl-color, #58a6ff);
+  font-weight: 700;
+}
+.cl-body { padding: 12px 18px 16px; }
+.cl-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid #21262d22;
+  cursor: pointer; transition: background 0.1s; border-radius: 6px;
+  padding-left: 6px; margin: 0 -6px;
+}
+.cl-item:last-child { border-bottom: none; }
+.cl-item:hover { background: #21262d44; }
+.cl-checkbox {
+  width: 18px; height: 18px; border-radius: 5px;
+  border: 2px solid #30363d; background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 0.15s; margin-top: 1px;
+}
+.cl-item.checked .cl-checkbox {
+  background: #3fb950; border-color: #3fb950;
+  color: white; font-size: 0.75rem;
+}
+.cl-item.checked .cl-checkbox::after { content: ''; }
+.cl-item-text { font-size: 0.8rem; color: #c9d1d9; line-height: 1.45; }
+.cl-item.checked .cl-item-text { text-decoration: line-through; color: #484f58; }
+.cl-item .cl-warn { color: #f85149; font-weight: 700; }
+.cl-item .cl-ok { color: #3fb950; font-weight: 700; }
+.cl-progress {
+  height: 4px; background: #21262d; border-radius: 2px;
+  margin: 10px 0 4px; overflow: hidden;
+}
+.cl-progress-bar { height: 100%; background: #3fb950; border-radius: 2px; transition: width 0.3s; }
+.cl-progress-label { font-size: 0.68rem; color: #8b949e; margin-bottom: 10px; }
+.cl-reset {
+  margin-top: 10px; padding: 5px 14px;
+  background: transparent; border: 1px solid #30363d;
+  border-radius: 7px; color: #8b949e; font-size: 0.75rem;
+  cursor: pointer; transition: all 0.15s;
+}
+.cl-reset:hover { border-color: #58a6ff; color: #58a6ff; }
+
+/* Highlight checklist items critiques */
+.cl-item.critical .cl-item-text { font-weight: 600; color: #ffa657; }
+.cl-item.critical .cl-checkbox { border-color: #ffa657; }
+.cl-item.critical.checked .cl-checkbox { background: #ffa657; border-color: #ffa657; }
+
+/* FICHE DE GARDE */
+.garde-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(600px, 100%), 1fr));
+  gap: 16px; padding: 16px 20px 40px;
+}
+.garde-card {
+  background: #161b22; border-radius: 12px; overflow: hidden;
+  border: 1px solid #21262d;
+}
+.garde-card-head {
+  font-size: 0.82rem; font-weight: 800; letter-spacing: 0.3px;
+  padding: 10px 14px; border-bottom: 2px solid;
+}
+.garde-red    .garde-card-head { color: #f85149; border-color: #f85149; background: #f8514910; }
+.garde-orange .garde-card-head { color: #ffa657; border-color: #ffa657; background: #ffa65710; }
+.garde-blue   .garde-card-head { color: #58a6ff; border-color: #58a6ff; background: #58a6ff10; }
+.garde-green  .garde-card-head { color: #3fb950; border-color: #3fb950; background: #3fb95010; }
+.garde-purple .garde-card-head { color: #d2a8ff; border-color: #d2a8ff; background: #d2a8ff10; }
+.garde-teal   .garde-card-head { color: #39d353; border-color: #39d353; background: #39d35310; }
+
+.garde-table { width: 100%; border-collapse: collapse; font-size: 0.77rem; }
+.garde-table tr { border-bottom: 1px solid #21262d; }
+.garde-table tr:last-child { border-bottom: none; }
+.garde-table td { padding: 7px 12px; vertical-align: top; line-height: 1.5; color: #c9d1d9; }
+.garde-table thead tr { background: #0d111788; }
+.garde-table thead td { color: #8b949e; font-weight: 700; font-size: 0.7rem; padding: 5px 10px; }
+
+.gc-label {
+  width: 150px; min-width: 150px; max-width: 150px;
+  font-weight: 700; font-size: 0.72rem; color: #8b949e;
+  border-right: 1px solid #21262d; padding-right: 8px;
+}
+.gc-drug  { color: #58a6ff; font-weight: 700; }
+.gc-val   { color: #3fb950; font-weight: 700; }
+.gc-alert { color: #f85149; font-weight: 700; }
+
+.mascc-item {
+  background: #21262d; border-radius: 7px; padding: 6px 10px;
+  color: #c9d1d9; font-size: 0.75rem;
+}
+
+/* HOME PANEL */
+#home-panel { position: absolute; inset: 0; width: 100%; height: 100%; display: none; overflow-y: auto; background: #0d1117; color: #c9d1d9; font-family: system-ui, -apple-system, sans-serif; }
+#home-panel.active { display: block; }
+.home-content { max-width: 900px; margin: 0 auto; padding: 28px 24px 48px; }
+.home-greeting { font-size: 1.4rem; font-weight: 800; color: #e6edf3; margin-bottom: 4px; }
+.home-date { font-size: 0.85rem; color: #8b949e; text-transform: capitalize; margin-bottom: 24px; }
+.home-stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+.home-stat { background: #161b22; border: 1px solid #21262d; border-radius: 14px; padding: 18px 16px; cursor: pointer; transition: border-color 0.2s; text-align: center; }
+.home-stat:hover { border-color: #58a6ff; }
+.home-stat-urgent { border-color: #f8514988 !important; }
+.home-stat-ok { border-color: #3fb95088 !important; }
+.hs-num { font-size: 2.2rem; font-weight: 900; color: #58a6ff; line-height: 1.1; }
+.home-stat-urgent .hs-num { color: #f85149; }
+.home-stat-ok .hs-num { color: #3fb950; }
+.hs-icon { font-size: 1.5rem; margin-bottom: 6px; }
+.hs-lbl { font-size: 0.75rem; color: #8b949e; margin-top: 4px; line-height: 1.4; }
+.hs-sub { font-size: 0.7rem; color: #58a6ff; margin-top: 2px; }
+.hs-action { font-size: 0.7rem; color: #58a6ff; margin-top: 6px; font-weight: 700; }
+.home-section { margin-bottom: 22px; }
+.home-section-title { font-size: 0.68rem; font-weight: 700; color: #484f58; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+.home-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.home-chip { padding: 6px 14px; border-radius: 20px; border: 1px solid #30363d; background: #161b22; color: #c9d1d9; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.15s; }
+.home-chip:hover { border-color: #58a6ff; color: #58a6ff; }
+.home-chip-fiche { border-color: #7c3aed33; color: #d2a8ff; }
+.home-chip-fiche:hover { border-color: #7c3aed; background: #7c3aed22; }
+.home-chip-proto { border-color: #1f6feb33; color: #79c0ff; }
+.home-chip-proto:hover { border-color: #1f6feb; background: #1f6feb22; }
+.proto-star-btn { background: none; border: none; cursor: pointer; font-size: 1rem; color: #484f58; padding: 0 4px; margin-left: auto; transition: color 0.15s; flex-shrink: 0; }
+.proto-star-btn:hover, .proto-star-btn.active { color: #e3b341; }
+.fiche-link-btn { margin-left: 0; }
+.ctrl-btn-proto { padding: 5px 12px; border-radius: 8px; border: 1px solid #30363d; background: transparent; color: #8b949e; cursor: pointer; font-size: 0.78rem; transition: all 0.15s; }
+.ctrl-btn-proto:hover { color: #e6edf3; border-color: #58a6ff; }
+.ctrl-btn-proto.on { color: #e3b341; border-color: #e3b341; }
+</style>
+</head>
+<body>
+
+<div class="tabbar">
+  <span class="tabbar-logo"> Onco-Pharma</span>
+  <button class="tab active" onclick="switchTab(0)" title="Raccourci : touche 1">Accueil</button>
+  <button class="tab" onclick="switchTab(1)" title="Raccourci : touche 2">Flash Cards/Études</button>
+  <button class="tab" onclick="switchTab(2)" title="Raccourci : touche 3">Fiches</button>
+  <button class="tab" onclick="switchTab(3)" title="Raccourci : touche 4">Protocoles</button>
+  <button class="tab" onclick="switchTab(4)" title="Raccourci : touche 5">Checklists</button>
+  <button class="tab" onclick="switchTab(5)" title="Raccourci : touche 6">Fiche de garde</button>
+  <div style="flex:1"></div>
+  <div style="position:relative">
+    <input id="global-search" type="text" placeholder="Recherche globale..." oninput="runGlobalSearch(this.value)"
+      style="padding:6px 14px;border-radius:8px;border:1px solid #30363d;background:#21262d;color:#e6edf3;font-size:0.8rem;width:220px;outline:none;">
+    <div id="search-results" style="display:none;position:absolute;right:0;top:38px;width:360px;background:#161b22;border:1px solid #30363d;border-radius:10px;max-height:400px;overflow-y:auto;z-index:1000;box-shadow:0 8px 32px rgba(0,0,0,0.5);"></div>
+  </div>
+</div>
+
+<div class="frames">
+  <iframe id="f0" class="active" src="flashcards.html"></iframe>
+  <iframe id="f1"               src="fiches_revision.html"></iframe>
+
+  <div id="home-panel" class="active"><div class="home-content" id="home-content"></div></div>
+
+  <!--
+       ONGLET PROTOCOLES
+        -->
+  <div id="proto-panel">
+
+    <div class="proto-header">
+      <h2>Protocoles par type de cancer</h2>
+      <div class="proto-search-wrap">
+        <input class="proto-search" type="text" placeholder="Rechercher un protocole ou molécule" oninput="filterProto(this.value)">
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <div class="filter-chips" id="filter-chips" style="flex:1"></div>
+        <button class="ctrl-btn-proto" id="btn-compact" onclick="toggleCompact()" title="Masquer bilan/monitoring/options">Vue express</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid #21262d;">
+        <span style="font-size:0.68rem;color:#484f58;font-weight:700;align-self:center;margin-right:2px;">BADGES :</span>
+        <span style="font-size:0.68rem;background:#3fb95022;color:#3fb950;border-radius:4px;padding:1px 7px;font-weight:700;">L1 1ère ligne</span>
+        <span style="font-size:0.68rem;background:#58a6ff22;color:#58a6ff;border-radius:4px;padding:1px 7px;font-weight:700;">L2 2ème ligne</span>
+        <span style="font-size:0.68rem;background:#a5d6ff22;color:#a5d6ff;border-radius:4px;padding:1px 7px;font-weight:700;">L3 3ème ligne+</span>
+        <span style="font-size:0.68rem;background:#e3b34122;color:#e3b341;border-radius:4px;padding:1px 7px;font-weight:700;">Adj adjuvant</span>
+        <span style="font-size:0.68rem;background:#ffa65722;color:#ffa657;border-radius:4px;padding:1px 7px;font-weight:700;">Néoadj néo-adjuvant</span>
+        <span style="font-size:0.68rem;background:#d2a8ff22;color:#d2a8ff;border-radius:4px;padding:1px 7px;font-weight:700;">Options / Alt</span>
+        <span style="font-size:0.68rem;background:#4db6ac22;color:#4db6ac;border-radius:4px;padding:1px 7px;font-weight:700;">Bilan pré-thérap</span>
+        <span style="font-size:0.68rem;background:#79c0ff22;color:#79c0ff;border-radius:4px;padding:1px 7px;font-weight:700;">Monitor suivi</span>
+        <span style="font-size:0.68rem;background:#81a4c822;color:#81a4c8;border-radius:4px;padding:1px 7px;font-weight:700;">BCG intravésical</span>
+        <span style="display:inline-block;font-size:0.68rem;background:#da363322;color:#f85149;border-radius:4px;padding:1px 7px;font-weight:700;">! Alerte</span>
+        <span style="display:inline-block;font-size:0.68rem;background:#1f6feb22;color:#58a6ff;border-radius:4px;padding:1px 7px;font-weight:700;">Etude essai</span>
+        <span style="display:inline-block;font-size:0.68rem;background:#a371f722;color:#d2a8ff;border-radius:4px;padding:1px 7px;font-weight:700;">Biomarqueur</span>
+      </div>
+    </div>
+
+    <div class="proto-grid" id="proto-grid">
+      <!--  SEIN HER2+  -->
+      <div class="cancer-card" data-group="sein">
+        <div class="cc-head" style="border-left: 4px solid #e91e8c;">
+          
+          <div><div class="cc-title">Sein HER2+</div><div class="cc-sub">HER2 IHC3+ ou IHC2+/FISH+</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="neo">Néoadj</td><td>
+            <span class="proto-name">TCHP</span>
+            <span class="proto-doses">Docétaxel 75 mg/m² + Carboplatine AUC6 + Trastuzumab 8→6 mg/kg + Pertuzumab 840→420 mg · J1/21 × 6</span>
+            <span class="proto-warn">Si résidu post-op → switch T-DM1 (KATHERINE)</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">Mammographie bilatérale + IRM mammaire · Biopsie guidée écho · IHC : RE/RP/<strong>HER2</strong>/Ki67 · FISH si HER2 IHC2+ · Bilan extension : TDM TAP ± TEP-FDG · IRM cérébrale si M+</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">FEVG avant traitement + toutes les 12 sem (anti-HER2) · NFS avant chaque cycle · Test DPD avant FEC · QTc avant traitement</span>
+            <span class="proto-warn">Arrêt trastuzumab si FEVG &lt;50% ou chute ≥10 pts vs baseline</span>
+          </td></tr>
+          <tr><td class="l1">L1 M+</td><td>
+            <span class="proto-name">Pertuzumab + Trastuzumab + Docétaxel</span>
+            <span class="proto-doses">Pertuzumab 840→420 mg + Trast 8→6 mg/kg + Docétaxel 75 mg/m² J1/21 · Anti-HER2 jusqu'à progression</span>
+            <span class="proto-cond">CLEOPATRA · OS 57 mois</span>
+          </td></tr>
+          <tr><td class="l2">L2 M+</td><td>
+            <span class="proto-name">T-DXd (Enhertu)</span>
+            <span class="proto-doses">5,4 mg/kg IV J1/21</span>
+            <span class="proto-cond">DESTINY-Breast03</span>
+            <span class="proto-warn">PID : TDM à 6 sem · FEVG /3 cycles</span>
+          </td></tr>
+          <tr><td class="l3">L3 M+</td><td>
+            <span class="proto-name">T-DM1 (Kadcyla)</span>
+            <span class="proto-doses">3,6 mg/kg IV J1/21 · Plaquettes &amp; FEVG à surveiller</span>
+            <span class="proto-warn">T-DM1 relégué en L3 depuis DESTINY-Breast03 (T-DXd supérieur en L2)</span>
+          </td></tr>
+          <tr><td class="po">PO options</td><td>
+            <span class="proto-doses">Nératinib 240 mg/j (adjuvant étendu 1 an post-T) · Lapatinib 1250 mg/j + Capécitabine (≥3L) · Tucatinib 300 mg×2/j + Trast + Capé (HER2CLIMB)</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  SEIN HER2-low  -->
+      <div class="cancer-card" data-group="sein">
+        <div class="cc-head" style="border-left: 4px solid #f06292;">
+          
+          <div><div class="cc-title">Sein HER2-low</div><div class="cc-sub">IHC 1+ ou IHC 2+/FISH− · RH+ ou TNBC</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">Après L1 HT</td><td>
+            <span class="proto-name">T-DXd (Enhertu)</span>
+            <span class="proto-doses">5,4 mg/kg IV J1/21</span>
+            <span class="proto-cond">DESTINY-Breast04 · SG 23,4 vs 16,8 mois</span>
+            <span class="proto-bio">HER2 IHC1+ ou IHC2+/FISH−</span>
+          </td></tr>
+          <tr><td class="po">Remarque</td><td>
+            <span class="proto-doses">Entité nouvelle (2022) : ≈50% des sein RH+/HER2− sont HER2-low · Reclassification IHC obligatoire</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  SEIN TNBC  -->
+      <div class="cancer-card" data-group="sein">
+        <div class="cc-head" style="border-left: 4px solid #c62828;">
+          
+          <div><div class="cc-title">Sein TNBC</div><div class="cc-sub">RH− HER2− · Triple négatif</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="neo">Néoadj</td><td>
+            <span class="proto-name">Pembrolizumab + Carbo + Paclitaxel hebdo → Pembro + EC</span>
+            <span class="proto-doses">Pembro 200 mg J1/21 + Carbo AUC5 + Pac 80 mg/m²/sem × 12 → Pembro + Epi 90/Doxo 60 + Cyclo 600 × 4 → chirurgie → Pembro × 9</span>
+            <span class="proto-cond">KEYNOTE-522 · pCR 64,8%</span>
+          </td></tr>
+          <tr><td class="l1">L1 M+</td><td>
+            <span class="proto-name">Sacituzumab govitecan (Trodelvy)</span>
+            <span class="proto-doses">10 mg/kg IV J1 J8 / J21</span>
+            <span class="proto-cond">ASCENT · SG 12,1 vs 6,7 mois</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">IHC : RE/RP/HER2 (TNBC = RE-/RP-/HER2-) · Ki67 · BRCA1/2 germinal (indication PARP) · PD-L1 CPS (seuil 10 pour pembro) · TEP-FDG si stade III-IV · IRM cérébrale si M+</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">NFS avant chaque cycle · Test DPD obligatoire · Glycémie si carboplatine · FEVG avant AC/EC</span>
+          </td></tr>
+          <tr><td class="l1">L1 PD-L1+</td><td>
+            <span class="proto-name">Pembrolizumab + nab-Paclitaxel ou Gem+Carbo</span>
+            <span class="proto-doses">Pembro 200 mg J1/21 + nab-Pac 100 mg/m² J1J8J15/J28</span>
+            <span class="proto-bio">CPS ≥ 10</span>
+          </td></tr>
+          <tr><td class="po">PO si BRCAm</td><td>
+            <span class="proto-doses">Olaparib 300 mg×2/j ou Talazoparib 1 mg/j · Capécitabine 1000 mg/m²×2/j J1-14/J22 (option)</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  SEIN RH+ HER2-  -->
+      <div class="cancer-card" data-group="sein">
+        <div class="cc-head" style="border-left: 4px solid #ab47bc;">
+          
+          <div><div class="cc-title">Sein RH+/HER2−</div><div class="cc-sub">Luminal · CDK4/6 + hormonothérapie</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="adj">Adjuvant</td><td>
+            <span class="proto-name">FEC100 × 3 → Docétaxel × 3</span>
+            <span class="proto-doses">5-FU 500 + Épi 100 + Cyclo 500 mg/m² J1/22 × 3 → Doce 100 mg/m² J1/22 × 3</span>
+            <span class="proto-warn">Test DPD obligatoire · FEVG avant</span>
+          </td></tr>
+          <tr><td class="l1">L1 M+</td><td>
+            <span class="proto-name">CDK4/6 + Inhibiteur Aromatase</span>
+            <span class="proto-doses">Abémaciclib 150 mg×2/j continu OU Palbociclib 125 mg/j × 21j/28 OU Ribociclib 600 mg/j × 21j/28 + Létrozole 2,5 mg/j ou Anastrozole 1 mg/j</span>
+            <span class="proto-cond">MONARCH-3 · PALOMA-3 · MONALEESA-2</span>
+          </td></tr>
+          <tr><td class="l2">L2 M+</td><td>
+            <span class="proto-name">Fulvestrant ± CDK4/6 (si pas reçu) ou Évérolimus + Exémestane</span>
+            <span class="proto-doses">Fulvestrant 500 mg IM J1 J15 puis J1/28 · Évo 10 mg/j + Exémestane 25 mg/j (BOLERO-2)</span>
+          </td></tr>
+          <tr><td class="l2">L2 PIK3CA</td><td>
+            <span class="proto-name">Alpelisib + Fulvestrant</span>
+            <span class="proto-doses">Alpelisib 300 mg/j PO + Fulvestrant 500 mg IM J1/28</span>
+            <span class="proto-bio">PIK3CA muté (SOLAR-1)</span>
+            <span class="proto-warn">Hyperglycémie ++ · glycémie à jeun avant chaque cycle</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">IHC : RE/RP/HER2/Ki67 · Oncotype DX si N0 (RS &lt;18 = HT seule · ≥31 = chimio) · Statut ménopausique · IRM mammaire si dense/BRCA+ · Statut BRCA si M+</span>
+            <span class="proto-bio">PIK3CA (pour alpelisib) · ESR1 biopsie liquide (pour elacestrant) · HRD si BRCA muté</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">CDK4/6 : NFS J1 chaque cycle + J14C1 · Ribociclib : ECG J14C1 et J14C2 (QTc) · Alpelisib : glycémie à jeun avant chaque cycle · Fulvestrant : bilan hépatique /3 mois</span>
+          </td></tr>
+          <tr><td class="l3">L2+ ESR1</td><td>
+            <span class="proto-name">Elacestrant (SERD oral)</span>
+            <span class="proto-doses">345 mg/j PO avec aliments</span>
+            <span class="proto-bio">Mutation ESR1 (biopsie liquide) après CDK4/6 + IA</span>
+          </td></tr>
+          <tr><td class="po">PO adjuvant</td><td>
+            <span class="proto-doses">Abémaciclib 150 mg×2/j × 2 ans si N+ haut risque (MONARCH-E) · Tamoxifène 20 mg/j (préménopause) · IA (postménopause)</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  POUMON CBNPC NON-SQUAMEUX  -->
+      <div class="cancer-card" data-group="poumon">
+        <div class="cc-head" style="border-left: 4px solid #1565c0;">
+          
+          <div><div class="cc-title">CBNPC Non-squameux</div><div class="cc-sub">Sans mutation pilote · stade IV</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">L1 PD-L1 ≥50%</td><td>
+            <span class="proto-name">Pembrolizumab monothérapie</span>
+            <span class="proto-doses">200 mg IV J1/21 · jusqu'à 35 cycles (2 ans)</span>
+            <span class="proto-cond">KEYNOTE-024 · OS 26,3 mois</span>
+            <span class="proto-bio">TPS ≥ 50% · EGFR/ALK négatifs obligatoire</span>
+          </td></tr>
+          <tr><td class="l1">L1 tous PD-L1</td><td>
+            <span class="proto-name">Pembro + Carboplatine + Pémétrexed</span>
+            <span class="proto-doses">Pembro 200 mg + Carbo AUC5 + Pem 500 mg/m² J1/21 × 4 → Pembro + Pem maintenance</span>
+            <span class="proto-cond">KEYNOTE-189 · OS 22 mois</span>
+            <span class="proto-warn">Pémétrexed : Vit B12 IM /9 sem + Ac folique 0,4 mg/j oral</span>
+          </td></tr>
+          <tr><td class="l1">L1 alt</td><td>
+            <span class="proto-name">Atézolizumab + Bévacizumab + Carbo + Paclitaxel (ABCP)</span>
+            <span class="proto-doses">Atézo 1200 mg + Béva 15 mg/kg + Carbo AUC6 + Pac 200 mg/m² J1/21 × 4-6 → Atézo + Béva maintenance</span>
+            <span class="proto-cond">IMpower150 · actif si EGFR/ALK muté en progression</span>
+          </td></tr>
+          <tr><td class="adj">Stade III non résécable</td><td>
+            <span class="proto-name">Durvalumab consolidation post-CRT (PACIFIC)</span>
+            <span class="proto-doses">10 mg/kg IV J1/14 × 12 mois · Débuter dans les 42 jours post-RT</span>
+            <span class="proto-cond">PACIFIC · OS 5 ans 42,9% vs 33,4% · Bénéfice indépendant PD-L1</span>
+            <span class="proto-warn">CI si pneumopathie radique G3-4 · Bilan pulmonaire TDM avant initiation</span>
+          </td></tr>
+          <tr><td class="l2">L2</td><td>
+            <span class="proto-name">Docétaxel ± Ramucirumab</span>
+            <span class="proto-doses">Doce 75 mg/m² J1/21 ± Ramu 10 mg/kg J1/21</span>
+            <span class="proto-cond">REVEL · SG 10,5 vs 9,1 mois</span>
+            <span class="proto-warn">Prémédication Doce : Dexa 8 mg PO la veille + J0 + J+1</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  POUMON CBNPC SQUAMEUX  -->
+      <div class="cancer-card" data-group="poumon">
+        <div class="cc-head" style="border-left: 4px solid #1976d2;">
+          
+          <div><div class="cc-title">CBNPC Squameux</div><div class="cc-sub">Épidermoïde · stade IV</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">L1</td><td>
+            <span class="proto-name">Pembro + Carboplatine + Paclitaxel/nab-Paclitaxel</span>
+            <span class="proto-doses">Pembro 200 mg + Carbo AUC6 + Pac 200 mg/m² J1/21 × 4 → Pembro maintenance</span>
+            <span class="proto-cond">KEYNOTE-407 · OS 15,9 mois</span>
+            <span class="proto-warn">Prémédication Paclitaxel obligatoire (Dexa + anti-H1 + anti-H2)</span>
+          </td></tr>
+          <tr><td class="l2">L2</td><td>
+            <span class="proto-name">Docétaxel ± Nintédanib</span>
+            <span class="proto-doses">Doce 75 mg/m² J1/21 ± Nintédanib 200 mg×2/j PO J2-21</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  POUMON MUTATIONS PILOTES  -->
+      <div class="cancer-card" data-group="poumon">
+        <div class="cc-head" style="border-left: 4px solid #0097a7;">
+          
+          <div><div class="cc-title">CBNPC – Mutations pilotes</div><div class="cc-sub">EGFR · ALK · KRAS G12C · MET · RET · BRAF · HER2 · ROS1 · NTRK</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="po"><span class="proto-bio">EGFR 19del/L858R</span></td><td>
+            <span class="proto-name">Osimertinib (Tagrisso)</span>
+            <span class="proto-doses">80 mg/j PO · L1 M+ et adjuvant 3 ans (ADAURA : SG +10% à 5 ans)</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">EGFR T790M</span></td><td>
+            <span class="proto-name">Osimertinib</span>
+            <span class="proto-doses">80 mg/j PO · L2 si résistance EGFR 1G/2G</span>
+          </td></tr>
+          <tr><td class="l1"><span class="proto-bio">EGFR Exon20 ins</span></td><td>
+            <span class="proto-name">Amivantamab + Carboplatine + Pémétrexed</span>
+            <span class="proto-doses">Amivantamab IV hebdo × 4 puis /2 sem + Carbo AUC5 + Pem 500 mg/m² J1/21</span>
+            <span class="proto-cond">PAPILLON · PFS 11,4 vs 6,7 mois</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">ALK réarrangé</span></td><td>
+            <span class="proto-name">Alectinib (Alecensa) → Lorlatinib si résistance</span>
+            <span class="proto-doses">Alectinib 600 mg×2/j PO · Lorlatinib 100 mg/j PO (3G)</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">KRAS G12C (~13%)</span></td><td>
+            <span class="proto-name">Sotorasib (Lumakras) ou Adagrasib (Krazati)</span>
+            <span class="proto-doses">Sotorasib 960 mg/j PO · Adagrasib 400 mg×2/j PO (meilleure pénétration SNC)</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">RET fusionné</span></td><td>
+            <span class="proto-name">Selpercatinib (Retsevmo)</span>
+            <span class="proto-doses">160 mg×2/j PO · Surveillance QTc + HTA + transaminases</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">NTRK fusion</span></td><td>
+            <span class="proto-name">Larotrectinib ou Entrectinib</span>
+            <span class="proto-doses">Agnostique · Larotrectinib 100 mg×2/j PO · ORR 79%</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">MET exon14</span></td><td>
+            <span class="proto-name">Capmatinib ou Tepotinib</span>
+            <span class="proto-doses">Capmatinib 400 mg×2/j PO · Tepotinib 500 mg/j PO</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">BRAF V600E (~2-4%)</span></td><td>
+            <span class="proto-name">Dabrafenib 150 mg×2/j + Trametinib 2 mg/j PO</span>
+            <span class="proto-cond">BRF113928 · ORR 64% · Fièvre et rash fréquents (mécanisme class-effet)</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">HER2 muté (~3%)</span></td><td>
+            <span class="proto-name">T-DXd (Trastuzumab Déruxtécan) 6,4 mg/kg IV J1/21</span>
+            <span class="proto-cond">DESTINY-Lung01/02 · ORR 55% en L2+</span>
+            <span class="proto-warn">Pneumopathie interstitielle (ILD) : 10-15% · TDM thorax systématique · Grade ≥ 2 = arrêt définitif</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">ROS1 réarrangé (~1-2%)</span></td><td>
+            <span class="proto-name">Crizotinib 250 mg×2/j ou Entrectinib 600 mg/j PO</span>
+            <span class="proto-doses">Lorlatinib 100 mg/j PO si résistance · Meilleure pénétration SNC (Entrectinib/Lorlatinib)</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  CPC  -->
+      <div class="cancer-card" data-group="poumon">
+        <div class="cc-head" style="border-left: 4px solid #37474f;">
+          
+          <div><div class="cc-title">CPC (Cancer à Petites Cellules)</div><div class="cc-sub">Extensive stage · nadir J7-10</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">L1</td><td>
+            <span class="proto-name">Atézolizumab + Carboplatine + Étoposide</span>
+            <span class="proto-doses">Atézo 1200 mg + Carbo AUC5 + Éto 100 mg/m² J1-3 / J21 × 4 → Atézo maintenance</span>
+            <span class="proto-cond">IMpower133 · OS 12,3 vs 10,3 mois</span>
+          </td></tr>
+          <tr><td class="l1">L1 alt</td><td>
+            <span class="proto-name">Durvalumab + Étoposide + Cisplatine/Carboplatine</span>
+            <span class="proto-doses">Durvalumab 1500 mg J1/21 + Éto 80-100 mg/m² J1-3</span>
+            <span class="proto-cond">CASPIAN · SG 12,9 mois</span>
+          </td></tr>
+          <tr><td class="l2">L2</td><td>
+            <span class="proto-name">Topotécan IV ou PO</span>
+            <span class="proto-doses">IV : 1,5 mg/m²/j J1-5 / J22 · PO : 2,3 mg/m²/j J1-5 / J22</span>
+            <span class="proto-warn">Neutropénie sévère · G-CSF recommandé</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  POUMON CBNPC ADJUVANT  -->
+      <div class="cancer-card" data-group="poumon">
+        <div class="cc-head" style="border-left: 4px solid #0d47a1;">
+          
+          <div><div class="cc-title">CBNPC – Adjuvant stade précoce</div><div class="cc-sub">Stade IB-IIIA · osimertinib · pembrolizumab · atézolizumab</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="adj"><span class="proto-bio">EGFR muté + résection</span></td><td>
+            <span class="proto-name">Osimertinib (Tagrisso) × 3 ans</span>
+            <span class="proto-doses">80 mg/j PO · Stades IB-IIIA post-résection R0</span>
+            <span class="proto-cond">ADAURA · OS HR 0,49 · SG 5 ans 85 vs 73% · Standard mondial</span>
+            <span class="proto-warn">Efficacité indépendante du stade · Vérifier EGFR tissulaire ou ADN circulant avant</span>
+          </td></tr>
+          <tr><td class="adj">Stade II-IIIA résécable</td><td>
+            <span class="proto-name">Pembrolizumab adjuvant × 1 an</span>
+            <span class="proto-doses">200 mg IV J1/21 × 18 cycles · Après chimio adjuvante à base de platine</span>
+            <span class="proto-cond">PEARLS/KEYNOTE-091 · DFS HR 0,76 · Bénéfice dans tous les sous-groupes PD-L1</span>
+          </td></tr>
+          <tr><td class="adj">Stade IB-IIIA (alt)</td><td>
+            <span class="proto-name">Atézolizumab × 1 an</span>
+            <span class="proto-doses">1200 mg IV J1/21 × 16 cycles · Après chimio adjuvante platine</span>
+            <span class="proto-cond">IMpower010 · DFS HR 0,66 si PD-L1 ≥1% stade II-IIIA</span>
+          </td></tr>
+          <tr><td class="neo">Néo-adjuvant</td><td>
+            <span class="proto-name">Nivolumab + Chimio (CheckMate 816)</span>
+            <span class="proto-doses">Nivo 360 mg J1/21 + Carbo/Cis + Paclitaxel × 3 cycles → chirurgie</span>
+            <span class="proto-cond">CheckMate 816 · pCR 24 vs 2,2% · EFS HR 0,63</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">TDM TAP + TEP-FDG · IRM cérébrale · Bilan fonctionnel respiratoire · EGFR tissulaire obligatoire avant osimertinib · PD-L1 avant pembrolizumab/atézolizumab</span>
+          </td></tr>
+        </table>
+      </div>
+
+      <!--  MÉSOTHÉLIOME  -->
+      <div class="cancer-card" data-group="poumon">
+        <div class="cc-head" style="border-left: 4px solid #455a64;">
+          
+          <div><div class="cc-title">Mésothéliome pleural malin</div><div class="cc-sub">Amiante · Épithélioïde / Sarcomatoïde · Nivolumab + Ipi</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">L1 (standard actuel)</td><td>
+            <span class="proto-name">Nivolumab + Ipilimumab</span>
+            <span class="proto-doses">Nivo 3 mg/kg J1/14 + Ipi 1 mg/kg J1/42 · jusqu'à progression ou 2 ans</span>
+            <span class="proto-cond">CheckMate 743 · OS 18,1 vs 14,1 mois · Bénéfice majeur histologie non-épithélioïde</span>
+            <span class="proto-warn">Toxicités immunitaires G3-4 : 32% · Surveillance identique aux autres ICI</span>
+          </td></tr>
+          <tr><td class="l1">L1 alt (fit, ECOG 0-1)</td><td>
+            <span class="proto-name">Cisplatine + Pémétrexed × 6 cycles</span>
+            <span class="proto-doses">Cis 75 mg/m² J1 + Pem 500 mg/m² J1 / J22</span>
+            <span class="proto-cond">Standard historique · OS 12,1 mois · Maintenant réservé si CI ICI</span>
+            <span class="proto-warn">Pémétrexed : Vit B12 IM /9 sem + Ac folique 0,4 mg/j PO (commencer 7j avant) · Prémédication Dexa 4 mg×2/j J-1 J0 J+1</span>
+          </td></tr>
+          <tr><td class="l2">L2+</td><td>
+            <span class="proto-name">Gemcitabine ou Vinorelbine (monochimio)</span>
+            <span class="proto-doses">Pas d'standard établi · Options selon tolérance</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">TDM TAP · Thoracoscopie chirurgicale (biopsies pleurales) · Mésothéline sérique · NFS · Créatinine (éligibilité cisplatine) · EFR</span>
+            <span class="proto-bio">Histologie : épithélioïde (60%) meilleur pronostic · Sarcomatoïde (20%) · Biphasique (20%) · Amiante dans > 80% cas · Délai exposition-diagnostic : 30-50 ans</span>
+          </td></tr>
+        </table>
+      </div>
+
+      <!--  CCR  -->
+      <div class="cancer-card" data-group="ccr">
+        <div class="cc-head" style="border-left: 4px solid #2e7d32;">
+          
+          <div><div class="cc-title">Cancer colorectal (CCR)</div><div class="cc-sub">Côlon + Rectum · bilan moléculaire obligatoire</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1"><span class="proto-bio">RAS WT + côlon gauche</span></td><td>
+            <span class="proto-name">FOLFIRI + Cetuximab ou Panitumumab</span>
+            <span class="proto-doses">Irinotecan 180 + AF 400 + 5-FU 400 bolus + 5-FU 2400/46h J1/15 + Cetux 500 mg/m² J1/15</span>
+            <span class="proto-cond">CRYSTAL / PRIME</span>
+            <span class="proto-warn">Folliculite acnéiforme : doxycycline 100 mg/j préventive</span>
+          </td></tr>
+          <tr><td class="l1"><span class="proto-bio">RAS muté ou côlon droit</span></td><td>
+            <span class="proto-name">mFOLFOX6 ou FOLFIRI + Bévacizumab</span>
+            <span class="proto-doses">Oxali 85 + AF 400 + 5-FU 400 bolus + 5-FU 2400/46h J1/15 + Béva 5 mg/kg J1/15</span>
+            <span class="proto-warn">Oxaliplatine = G5% exclusivement · Arrêt Béva 28j avant chirurgie</span>
+          </td></tr>
+          <tr><td class="l1"><span class="proto-bio">MSI-H/dMMR</span></td><td>
+            <span class="proto-name">Pembrolizumab</span>
+            <span class="proto-doses">200 mg IV J1/21</span>
+            <span class="proto-cond">KEYNOTE-177 · PFS 16,5 vs 8,2 mois</span>
+          </td></tr>
+          <tr><td class="l2"><span class="proto-bio">BRAF V600E (12%)</span></td><td>
+            <span class="proto-name">Encorafenib + Cetuximab</span>
+            <span class="proto-doses">Encorafenib 300 mg/j PO + Cetux 500 mg/m² J1/15</span>
+            <span class="proto-cond">BEACON · SG 9 vs 5,4 mois</span>
+          </td></tr>
+          <tr><td class="l2"><span class="proto-bio">KRAS G12C (~4%)</span></td><td>
+            <span class="proto-name">Adagrasib + Cetuximab ou Sotorasib + Panitumumab</span>
+            <span class="proto-doses">Adagrasib 400 mg×2/j PO + Cetux 500 mg/m² J1/15</span>
+            <span class="proto-cond">KRYSTAL-1 · ORR 46%</span>
+            <span class="proto-warn">Anti-EGFR obligatoire (boucle feedback EGFR)</span>
+          </td></tr>
+          <tr><td class="l3">3L+</td><td>
+            <span class="proto-name">TAS-102 + Bévacizumab ou Régorafénib PO</span>
+            <span class="proto-doses">TAS-102 35 mg/m²×2/j J1-5 J8-12/J28 + Béva 5 mg/kg J1J15 · Régoraf 80→160 mg/j × 21/28</span>
+            <span class="proto-cond">SUNLIGHT · SG 10,8 vs 7,5 mois</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">Coloscopie totale + biopsies · TDM TAP injecté · CEA/ACE · NFS · ionogramme · bilan hépatique · créatinine</span>
+            <span class="proto-bio">Panel moléculaire OBLIGATOIRE : RAS (KRAS+NRAS exons 2/3/4) · BRAF V600E · MSI/dMMR (IHC4) · HER2 · KRAS G12C</span>
+            <span class="proto-warn">Ne jamais prescrire anti-EGFR sans bilan RAS/BRAF complet !</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">NFS + bilan hépatique avant chaque cycle · Oxaliplatine : évaluation neuropathie avant chaque cycle (questionnaire sensitif) · Arrêt oxali si G2 persistent ou G3 · CEA/ACE tous les 2-3 mois M+ · TDM réévaluation /6-8 sem</span>
+            <span class="proto-warn">Oxaliplatine = GLUCOSE 5% exclusivement (incompatible NaCl) · Pompe CADD pour 5-FU 46h</span>
+          </td></tr>
+          <tr><td class="adj">Adjuvant III</td><td>
+            <span class="proto-name">mFOLFOX6 ou CAPOX</span>
+            <span class="proto-doses">6 mois (3 mois si stade III faible risque, IDEA) · CAPOX = Oxali 130 J1 + Capécitabine 1000 mg/m²×2/j J1-14/J22</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  GASTRIQUE  -->
+      <div class="cancer-card" data-group="gastrique">
+        <div class="cc-head" style="border-left: 4px solid #f57f17;">
+          
+          <div><div class="cc-title">Cancer gastrique / Jonction OGJ</div><div class="cc-sub">Adénocarcinome · bilan HER2 + PD-L1 CPS</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="adj">Périop</td><td>
+            <span class="proto-name">FLOT4</span>
+            <span class="proto-doses">Docétaxel 50 + Oxali 85 + AF 200 + 5-FU 2600 mg/m²/24h J1/15 · 4 cycles pré-op + 4 post-op</span>
+            <span class="proto-cond">FLOT4 · SG 50 vs 35 mois vs ECF</span>
+          </td></tr>
+          <tr><td class="l1"><span class="proto-bio">HER2−</span></td><td>
+            <span class="proto-name">Nivolumab + CAPOX ou FOLFOX</span>
+            <span class="proto-doses">Nivo 360 mg J1/21 + Oxali 130 + Capé 1000 mg/m²×2/j J1-14/J22</span>
+            <span class="proto-cond">CheckMate 649 · SG CPS≥5 : 14,4 vs 11,1 mois</span>
+          </td></tr>
+          <tr><td class="l1"><span class="proto-bio">HER2+ (15-20%)</span></td><td>
+            <span class="proto-name">Trastuzumab + Nivolumab + CAPOX</span>
+            <span class="proto-doses">Trast 8→6 mg/kg J1/21 + Nivo 360 mg + Oxali 130 + Capé 1000 mg/m²×2/j J1-14</span>
+            <span class="proto-cond">ToGA + KEYNOTE-811</span>
+            <span class="proto-warn">FEVG toutes les 12 sem</span>
+          </td></tr>
+          <tr><td class="l2">L2</td><td>
+            <span class="proto-name">Ramucirumab + Paclitaxel</span>
+            <span class="proto-doses">Ramu 8 mg/kg J1 J15 + Pac 80 mg/m² J1 J8 J15 / J28</span>
+            <span class="proto-cond">RAINBOW · SG 9,6 vs 7,4 mois</span>
+          </td></tr>
+          <tr><td class="l3">3L+</td><td>
+            <span class="proto-name">Trifluridine-tipiracil (TAS-102) · Régorafénib PO</span>
+            <span class="proto-doses">TAS-102 35 mg/m²×2/j J1-5 J8-12/J28</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">TDM TAP · Fibroscopie gastrique + biopsies multiples · Écho-endoscopie (stadification loco-régionale) · TEP-FDG si M1 possible · NFS · bilan hépatique · albumine</span>
+            <span class="proto-bio">HER2 IHC (IHC3+ ou IHC2+/FISH+) · PD-L1 CPS (seuil ≥5 CheckMate 649) · MSI/dMMR · EBV IHC (facteur pronostique)</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">FEVG avant et /12 sem si trastuzumab · NFS avant chaque cycle · Bilan hépatique · Magnésémie (FLOT : oxaliplatine + docétaxel) · G-CSF primaire avec FLOT</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  PANCRÉAS  -->
+      <div class="cancer-card" data-group="digestif">
+        <div class="cc-head" style="border-left: 4px solid #e65100;">
+          
+          <div><div class="cc-title">Cancer du pancréas</div><div class="cc-sub">15 991 cas/an · survie 5 ans 12% · RAS muté 90%</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="adj">Adjuvant</td><td>
+            <span class="proto-name">FOLFIRINOX modifié × 12 cycles</span>
+            <span class="proto-doses">Oxali 85 + Iri 180 + AF 400 + 5-FU 400 bolus + 5-FU 2400/46h J1/15 · OMS 0-1 &lt;70 ans</span>
+            <span class="proto-cond">Prodige 24 · SG 54,4 vs 35 mois</span>
+          </td></tr>
+          <tr><td class="adj">Adjuvant alt</td><td>
+            <span class="proto-name">Gemcitabine (si OMS ≥2 ou &gt;70 ans)</span>
+            <span class="proto-doses">1000 mg/m² J1 J8 J15 / J29 × 6 cycles</span>
+          </td></tr>
+          <tr><td class="l1">M+ OMS 0-1 &lt;70 ans</td><td>
+            <span class="proto-name">FOLFIRINOX</span>
+            <span class="proto-doses">Oxali 85 + Iri 180 + AF 400 + 5-FU 400 bolus + 5-FU 2400/46h J1/15</span>
+            <span class="proto-cond">Conroy NEJM 2011 · SG 11,1 vs 6,8 mois</span>
+          </td></tr>
+          <tr><td class="l1">M+ OMS 0-2</td><td>
+            <span class="proto-name">Gemcitabine + nab-Paclitaxel</span>
+            <span class="proto-doses">Gem 1000 + nab-Pac 125 mg/m² J1 J8 J15 / J29</span>
+            <span class="proto-cond">Von Hoff NEJM 2013 · SG 8,5 vs 6,7 mois</span>
+          </td></tr>
+          <tr><td class="po">Maintenance BRCAm</td><td>
+            <span class="proto-name">Olaparib (si non progressif après ≥16 sem FOLFIRINOX)</span>
+            <span class="proto-doses">300 mg×2/j PO · POLO · PFS 7,4 vs 3,8 mois</span>
+            <span class="proto-bio">BRCA1/2 germinal muté (~5-7% des pancréas)</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">TDM TAP multiphasique (coupes ≤1mm) · Écho-endoscopie + biopsie (Se 85% Sp 95%) · Bilan hépatique + bili · CA19-9 + ACE · NFS · Ionogramme · créatinine · albuminémie</span>
+            <span class="proto-bio">NGS tissu : RAS muté 90% · KRAS G12C 1-2% → sotorasib · MSI 1% → pembro · BRCA1/2 germinal · ATM · PALB2 · consultation génétique si &lt;60 ans</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">CA19-9 avant chaque cycle (suivi réponse) · NFS avant chaque cycle · FOLFIRINOX : G-CSF secondaire systématique · Test DPD obligatoire · Neuropathie oxaliplatine cumulée · Diarrhée irinotécan</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  CHC  -->
+      <div class="cancer-card" data-group="digestif">
+        <div class="cc-head" style="border-left: 4px solid #bf360c;">
+          
+          <div><div class="cc-title">Carcinome hépatocellulaire (CHC)</div><div class="cc-sub">Child-Pugh A · BCLC · fibroscopie avant béva</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">L1 (standard)</td><td>
+            <span class="proto-name">Atézolizumab + Bévacizumab</span>
+            <span class="proto-doses">Atézo 1200 mg + Béva 15 mg/kg J1/22</span>
+            <span class="proto-cond">IMbrave150 · SG 19,2 vs 13,4 mois</span>
+            <span class="proto-warn">Fibroscopie digestive haute OBLIGATOIRE avant Béva (varices oeso sur cirrhose)</span>
+          </td></tr>
+          <tr><td class="l1">L1 alt (si CI Béva)</td><td>
+            <span class="proto-name">Tremelimumab dose unique + Durvalumab</span>
+            <span class="proto-doses">Tremeli 300 mg IV dose unique + Durvalumab 1500 mg J1/28</span>
+            <span class="proto-cond">HIMALAYA · SG 16,4 vs 13,8 mois</span>
+          </td></tr>
+          <tr><td class="l2">L2</td><td>
+            <span class="proto-name">Régorafénib (si post-Sorafenib)</span>
+            <span class="proto-doses">160 mg/j × 21/28 PO</span>
+            <span class="proto-cond">RESORCE · SG 10,6 vs 7,8 mois</span>
+          </td></tr>
+          <tr><td class="po">Historique</td><td>
+            <span class="proto-name">Sorafenib</span>
+            <span class="proto-doses">400 mg×2/j PO (remplacé par atézo+béva en 1L)</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  OVAIRE  -->
+      <div class="cancer-card" data-group="gyneco">
+        <div class="cc-head" style="border-left: 4px solid #6a1b9a;">
+          
+          <div><div class="cc-title">Cancer de l'ovaire</div><div class="cc-sub">Bilan HRD · BRCA · bevacizumab</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">L1</td><td>
+            <span class="proto-name">Carboplatine + Paclitaxel</span>
+            <span class="proto-doses">Carbo AUC5-6 + Pac 175 mg/m² J1/22 × 6-8 cycles</span>
+            <span class="proto-warn">Prémédication Paclitaxel : Dexa 20 mg PO × 2 + anti-H1 + anti-H2</span>
+          </td></tr>
+          <tr><td class="l1">L1 + Béva</td><td>
+            <span class="proto-name">Carboplatine + Paclitaxel + Bévacizumab</span>
+            <span class="proto-doses">+ Béva 15 mg/kg J1/22 dès C2 → maintenance 15 mois</span>
+            <span class="proto-cond">GOG218 / ICON7</span>
+          </td></tr>
+          <tr><td class="po">Maintenance L1</td><td>
+            <span class="proto-doses"><span class="proto-bio">BRCAm :</span> Olaparib 300 mg×2/j PO × 2 ans (SOLO1)<br>
+            <span class="proto-bio">HRD+ :</span> Olaparib + Béva (PAOLA-1 · PFS 37,2 mois) ou Niraparib 200-300 mg/j PO<br>
+            <span class="proto-bio">HRD− :</span> Béva seul si reçu en induction</span>
+          </td></tr>
+          <tr><td class="l2">Platine-sensible</td><td>
+            <span class="proto-name">Carboplatine + Gemcitabine ± Bévacizumab</span>
+            <span class="proto-doses">Carbo AUC4 + Gem 1000 mg/m² J1J8 / J22 ± Béva 15 mg/kg J1/22</span>
+            <span class="proto-cond">OCEANS · PFS 12,4 vs 8,4 mois avec Béva</span>
+          </td></tr>
+          <tr><td class="l2">Platine-résistante</td><td>
+            <span class="proto-name">Paclitaxel hebdomadaire ± Bévacizumab · Topotécan · Éribuline</span>
+            <span class="proto-doses">Pac 80 mg/m²/sem + Béva 10 mg/kg J1J15 (AURELIA)</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">Écho pelvienne · TDM TAP · Chirurgie de stadification FIGO (idéale) ou biopsie guidée · CA125 + HE4 (ROMA score) · NFS · bilan hépatique · créatinine</span>
+            <span class="proto-bio">BRCA1/2 germinal et somatique · HRD score · MSI/MMR (Lynch ?) · BRCA1 méthylation</span>
+            <span class="proto-warn">FIGO I-II : chirurgie d'emblée · FIGO III-IV : staging chirurgical si possible (cytoreduction R0)</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">NFS J1+J8 (gemcitabine) · Créatinine avant chaque cycle (carboplatine AUC) · Prémédication paclitaxel systématique · CA125 avant chaque cycle · Béva : PA + BU mensuelle</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  ENDOMÈTRE  -->
+      <div class="cancer-card" data-group="gyneco">
+        <div class="cc-head" style="border-left: 4px solid #880e4f;">
+          
+          <div><div class="cc-title">Cancer de l'endomètre</div><div class="cc-sub">Test MMR / MSI + HER2 obligatoire</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1"><span class="proto-bio">MSI-H / dMMR</span></td><td>
+            <span class="proto-name">Pembrolizumab + Carboplatine + Paclitaxel</span>
+            <span class="proto-doses">Pembro 200 mg J1/21 + Carbo AUC5 + Pac 175 mg/m² × 6 → Pembro maintenance × 14 cycles</span>
+            <span class="proto-cond">RUBY · SG non atteinte vs 12 mois</span>
+          </td></tr>
+          <tr><td class="l1"><span class="proto-bio">pMMR / MSS</span></td><td>
+            <span class="proto-name">Dostarlimab + Carboplatine + Paclitaxel (RUBY)</span>
+            <span class="proto-doses">Dostarlimab 500 mg J1/21 × 6 → 1000 mg J1/42 maintenance + Carbo AUC5 + Pac 175 mg/m²</span>
+          </td></tr>
+          <tr><td class="l2">L2</td><td>
+            <span class="proto-name">Lénvatinib + Pembrolizumab</span>
+            <span class="proto-doses">Lénvatinib 20 mg/j PO + Pembro 200 mg J1/21</span>
+            <span class="proto-cond">KEYNOTE-146 · ORR 38%</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  COL UTÉRIN  -->
+      <div class="cancer-card" data-group="gyneco">
+        <div class="cc-head" style="border-left: 4px solid #ad1457;">
+          
+          <div><div class="cc-title">Cancer du col utérin</div><div class="cc-sub">HPV · cisplatine-RCT · PD-L1</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="adj">RCT standard</td><td>
+            <span class="proto-name">Cisplatine + Radiothérapie</span>
+            <span class="proto-doses">Cisplatine 40 mg/m²/sem × 5-6 cycles pendant RT (curiethérapie utéro-vaginale)</span>
+          </td></tr>
+          <tr><td class="l1">M+ / Récidive</td><td>
+            <span class="proto-name">Pembrolizumab + Carboplatine + Paclitaxel ± Bévacizumab</span>
+            <span class="proto-doses">Pembro 200 mg J1/21 + Carbo AUC5 + Pac 175 mg/m² ± Béva 15 mg/kg</span>
+            <span class="proto-cond">KEYNOTE-826 · SG CPS≥1 : 24,4 vs 16,3 mois</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  PROSTATE  -->
+      <div class="cancer-card" data-group="uro">
+        <div class="cc-head" style="border-left: 4px solid #1565c0;">
+          
+          <div><div class="cc-title">Cancer de la prostate</div><div class="cc-sub">mHSPC · mCRPC · thérapies ciblées</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">mHSPC haut risque</td><td>
+            <span class="proto-name">ADT + Docétaxel × 6 cycles</span>
+            <span class="proto-doses">Doce 75 mg/m² + Pred 5 mg×2/j J1/22 × 6 cycles · Puis ADT seul</span>
+            <span class="proto-cond">CHAARTED / STAMPEDE · SG +14 mois</span>
+          </td></tr>
+          <tr><td class="po">mHSPC alt</td><td>
+            <span class="proto-name">ADT + Enzalutamide ou Abiratérone ou Apalutamide</span>
+            <span class="proto-doses">Enzalutamide 160 mg/j · Abiratérone 1000 mg/j + Pred 5 mg×2/j · Apalutamide 240 mg/j</span>
+          </td></tr>
+          <tr><td class="l1">mCRPC L1</td><td>
+            <span class="proto-name">Enzalutamide ou Abiratérone + Prednisone</span>
+            <span class="proto-doses">Enzaluta 160 mg/j PO · Abirat 1000 mg/j PO + Pred 5 mg×2/j</span>
+          </td></tr>
+          <tr><td class="l2">mCRPC post-NHA</td><td>
+            <span class="proto-name">Docétaxel + Prednisone</span>
+            <span class="proto-doses">Doce 75 mg/m² J1/22 + Pred 5 mg×2/j PO</span>
+            <span class="proto-cond">TAX327 · SG 18,9 vs 16,5 mois</span>
+            <span class="proto-warn">Prémédication Dexa 8 mg PO × 3 (la veille, J0, lendemain)</span>
+          </td></tr>
+          <tr><td class="l3">Post-Docétaxel</td><td>
+            <span class="proto-name">Cabazitaxel 20 mg/m² + Prednisone</span>
+            <span class="proto-doses">Caba 20 mg/m² J1/22 + Pred 10 mg/j PO · G-CSF primaire obligatoire</span>
+            <span class="proto-cond">PROSELICA · 20 mg/m² = non-inférieur à 25 + mieux toléré</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">BRCAm</span></td><td>
+            <span class="proto-doses">Olaparib 300 mg×2/j PO (PROfound) ou Rucaparib 600 mg×2/j PO</span>
+          </td></tr>
+          <tr><td class="po">Lutetium-PSMA</td><td>
+            <span class="proto-name">⁷⁷⁷Lu-PSMA-617 (Pluvicto)</span>
+            <span class="proto-doses">7,4 GBq IV J1/42 × 6 cycles · Après NHA + Docétaxel · PSMA PET+ obligatoire</span>
+            <span class="proto-cond">VISION · SG 15,3 vs 11,3 mois</span>
+          </td></tr>
+          <tr><td class="po">Radium-223 (os)</td><td>
+            <span class="proto-name">Radium-223 dichloride (Xofigo) · Alpha-émetteur</span>
+            <span class="proto-doses">55 kBq/kg IV J1/28 × 6 injections · Exclusivement M+ osseuses symptomatiques sans M+ viscérales</span>
+            <span class="proto-cond">ALSYMPCA · SG 14,9 vs 11,3 mois · Réduit événements osseux</span>
+            <span class="proto-warn">CI absolue si M+ viscérales (ERA-223 : excès fractures avec abiratérone) · NFS avant chaque injection</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">PSA total · TR · IRM prostatique multiparamétrique (mpIRM, score PIRADS 1-5) · Biopsies guidées (Gleason/ISUP) · TDM TAP + scintigraphie osseuse si Gleason ≥7 ou PSA &gt;20 · TEP-PSMA si M1</span>
+            <span class="proto-bio">Testostéronémie avant HT (référence) · BRCA1/2 germinal si M+ (→ olaparib) · DMO avant HT prolongée (ostéoporose)</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">PSA tous les 3 mois sous HT · Testostéronémie &lt;50 ng/mL (objectif castration) · DMO /2 ans si HT &gt;6 mois → bisphosphonates/dénosumab si ostéoporose · NFS + bilan hépatique avant Docétaxel · G-CSF primaire recommandé si &gt;65 ans</span>
+            <span class="proto-warn">HT : surveiller syndrome métabolique, troubles cognitifs, ostéoporose, risque CV</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  REIN  -->
+      <div class="cancer-card" data-group="uro">
+        <div class="cc-head" style="border-left: 4px solid #00838f;">
+          
+          <div><div class="cc-title">Cancer du rein (CCR)</div><div class="cc-sub">Score IMDC · VHL · VEGFR · immunothérapie</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">L1 IMDC int/défav</td><td>
+            <span class="proto-name">Nivolumab 3 mg/kg + Ipilimumab 1 mg/kg</span>
+            <span class="proto-doses">J1/22 × 4 cycles → Nivolumab 480 mg J1/28 maintenance</span>
+            <span class="proto-cond">CheckMate 214 · OS 5 ans : 43 vs 31%</span>
+            <span class="proto-warn">Nivo 3 mg/kg ≠ mélanome (1 mg/kg) : ne pas confondre !</span>
+          </td></tr>
+          <tr><td class="l1">L1 tous risques</td><td>
+            <span class="proto-name">Pembrolizumab + Axitinib</span>
+            <span class="proto-doses">Pembro 200 mg J1/21 + Axitinib 5 mg×2/j PO</span>
+            <span class="proto-cond">KEYNOTE-426 · SG 45,7 vs 40,1 mois</span>
+            <span class="proto-warn">Axitinib : HTA 80% → surveillance TA hebdomadaire</span>
+          </td></tr>
+          <tr><td class="l1">L1 alt</td><td>
+            <span class="proto-name">Nivolumab + Cabozantinib</span>
+            <span class="proto-doses">Nivo 240 mg J1/15 + Cabo 40 mg/j PO</span>
+            <span class="proto-cond">CheckMate 9ER</span>
+          </td></tr>
+          <tr><td class="l2">L2+</td><td>
+            <span class="proto-name">Cabozantinib ou Sunitinib ou Évérolimus</span>
+            <span class="proto-doses">Cabo 60 mg/j PO · Sunit 50 mg/j × 28/42 · Évo 10 mg/j PO</span>
+          </td></tr>
+          <tr><td class="adj">Adjuvant</td><td>
+            <span class="proto-name">Pembrolizumab</span>
+            <span class="proto-doses">200 mg J1/21 × 17 cycles post-néphrectomie</span>
+            <span class="proto-cond">KEYNOTE-564 · DFS HR 0,68</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">TDM TAP injecté · IRM abdopelvienne · NFS · créatinine (DFG) · bilan hépatique · LDH · calcémie corrigée</span>
+            <span class="proto-bio">Score IMDC (6 facteurs pronostiques) · VHL (information biologique) · PD-L1 optionnel (non requis pour Nivo+Ipi)</span>
+            <span class="proto-warn">Score IMDC 0 = favorable · 1-2 = intermédiaire · ≥3 = défavorable → détermine le choix 1L</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">Axitinib : PA hebdomadaire les 4 premières semaines · bilan thyroïdien /8 sem · NFS avant chaque cycle · Nivo+Ipi : bilan auto-immun (TSH, glycémie, transaminases, créatinine) avant chaque cycle</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  UROTHÉLIAL  -->
+      <div class="cancer-card" data-group="uro">
+        <div class="cc-head" style="border-left: 4px solid #006064;">
+          
+          <div><div class="cc-title">Cancer urothélial (vessie, bassinet…)</div><div class="cc-sub">Tabac · Nectine-4 · FGFR3 · PD-L1</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">L1 M+ (2024)</td><td>
+            <span class="proto-name">Enfortumab vedotin + Pembrolizumab</span>
+            <span class="proto-doses">EV 1,25 mg/kg J1 J8 J15 / J28 + Pembro 200 mg J1/21</span>
+            <span class="proto-cond">EV-302 · SG 31,5 vs 16,1 mois · Standard 1L 2024</span>
+            <span class="proto-warn">Neuropathie 50% · rash · hyperglycémie</span>
+          </td></tr>
+          <tr><td class="l1">L1 si CI EV</td><td>
+            <span class="proto-name">Gemcitabine + Cisplatine ou Carboplatine</span>
+            <span class="proto-doses">Gem 1000 mg/m² J1J8 + Cis 70 mg/m² J1/J22 (ou Carbo AUC5 si CI Cis)</span>
+          </td></tr>
+          <tr><td class="l2"><span class="proto-bio">FGFR3 muté</span></td><td>
+            <span class="proto-name">Erdafitinib (PO)</span>
+            <span class="proto-doses">8→9 mg/j PO · Surveillance hyperphosphatémie + kératite</span>
+          </td></tr>
+          <tr><td class="l2">L2 post-platine</td><td>
+            <span class="proto-name">Nivolumab ou Pembrolizumab</span>
+            <span class="proto-doses">Nivo 240 mg J1/15 · Pembro 200 mg J1/21</span>
+          </td></tr>
+          <tr><td class="bcg">TVNIM haut risque</td><td>
+            <span class="proto-name">BCG intravésical</span>
+            <span class="proto-doses">Induction × 6 instillations hebdo → maintenance (3+3+3 ans) · Immunostimulation locale</span>
+          </td></tr>
+          <tr><td class="adj">Adjuvant (cystectomie)</td><td>
+            <span class="proto-name">Nivolumab × 1 an</span>
+            <span class="proto-doses">240 mg J1/15 × 20 doses</span>
+            <span class="proto-cond">CheckMate 274 · DFS HR 0,70</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">Cystoscopie + biopsies · TDM TAP · NFS · créatinine (DFG éligibilité cisplatine) · audiogramme (cisplatine) · bilan hépatique · cytologie urinaire</span>
+            <span class="proto-bio">FGFR3 (mutation/fusion → erdafitinib) · PD-L1 · HER2 · NECTIN-4 (toujours exprimée &gt;90%) · statut cisplatine-éligible (DFG≥60, Hb&gt;10, neuropathie G0, PS≤2)</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">EV : neuropathie (évaluation chaque cycle) · glycémie · NFS · Pembro : TSH /8 sem · BCG : surveillance locale + tolérance (fièvre, BCGite)</span>
+            <span class="proto-warn">EV G3+ neuropathie → arrêt définitif · EV : photosensibilisation cutanée (photoprotection)</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  VADS  -->
+      <div class="cancer-card" data-group="vads">
+        <div class="cc-head" style="border-left: 4px solid #33691e;">
+          
+          <div><div class="cc-title">Cancers des VADS (ORL)</div><div class="cc-sub">HPV · CPS PD-L1 · cetuximab · cisplatine</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="adj">RCT standard (LA)</td><td>
+            <span class="proto-name">Cisplatine + Radiothérapie</span>
+            <span class="proto-doses">Cisplatine 100 mg/m² J1 J22 J43 (dose hebdo 40 mg/m² possible) + RT 70 Gy / 35 séances</span>
+          </td></tr>
+          <tr><td class="l1">Induction LA inopérable</td><td>
+            <span class="proto-name">TPF × 3 → RCT</span>
+            <span class="proto-doses">Docétaxel 75 + Cisplatine 75 + 5-FU 750 mg/m²/j J1-5 / J22 × 3 cycles</span>
+            <span class="proto-warn">Triple toxicité : G-CSF primaire + prophylaxie mucite + hypomagnésémie</span>
+          </td></tr>
+          <tr><td class="l1"><span class="proto-bio">UCNT / Nasopharynx M+</span></td><td>
+            <span class="proto-name">Gemcitabine + Cisplatine</span>
+            <span class="proto-doses">Gemcitabine 1000 mg/m² J1J8 + Cisplatine 80 mg/m² J1 / J22 × 6 cycles</span>
+            <span class="proto-cond">GEM-CIS supérieur à EXTREME dans l'UCNT · EBV associé (LMP1/EBNA) · VCA IgA diagnostique</span>
+            <span class="proto-warn">Distinction UCNT / HNSCC classique essentielle : etiologie EBV vs HPV, protocoles distincts !</span>
+          </td></tr>
+          <tr><td class="l1">M+ / Récidivant CPS≥1</td><td>
+            <span class="proto-name">Pembrolizumab ± Cisplatine/Carboplatine + 5-FU</span>
+            <span class="proto-doses">Pembro 200 mg J1/21 ± Cis 100 mg/m² J1 + 5-FU 1000 mg/m²/j CI J1-4 / J22 × 6 cycles</span>
+            <span class="proto-cond">KEYNOTE-048 · Remplace progressivement EXTREME</span>
+            <span class="proto-bio">CPS ≥ 1 pour pembro seul · CPS ≥ 20 pour pembro monotx supérieur</span>
+          </td></tr>
+          <tr><td class="l1">M+ alt (CI ICI)</td><td>
+            <span class="proto-name">EXTREME (Cetuximab + Platine + 5-FU)</span>
+            <span class="proto-doses">Cetux 400→250 mg/m²/sem + Cis 100 mg/m² J1 + 5-FU 1000 mg/m²/j J1-4 / J22 × 6 → Cetux maintenance</span>
+            <span class="proto-warn">Hypomagnésémie ++ (cetux + platine) → supplémentation systématique</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">Endoscopie VADS + biopsies · Endoscopie oesophage (hypopharynx/alcool) · TDM cervicothoracique ± IRM cervicofaciale · TEP-FDG si stade III-IV · Statut HPV/p16 (oropharynx)</span>
+            <span class="proto-warn">Bilan dentaire obligatoire avant RT · Éval nutritionnelle (gastrostomie préventive si RT cervicale) · Audiogramme (cisplatine) · Éval CV</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">Cisplatine 100mg/m² : hyperhydratation IV 2L avant + 2L après + KCl + MgSO4 · Magnésémie avant chaque cycle + supplémentation · NFS avant chaque cycle · Poids hebdomadaire si RT (mucites)</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  MÉLANOME  -->
+      <div class="cancer-card" data-group="melanome">
+        <div class="cc-head" style="border-left: 4px solid #212121;">
+          
+          <div><div class="cc-title">Mélanome métastatique</div><div class="cc-sub">BRAF V600E 50% · immunothérapie · ciblée</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1"><span class="proto-bio">BRAF WT</span></td><td>
+            <span class="proto-name">Nivolumab + Ipilimumab</span>
+            <span class="proto-doses">Nivo 1 mg/kg + Ipi 3 mg/kg J1/22 × 4 → Nivo 480 mg J1/28</span>
+            <span class="proto-cond">CheckMate 067 · OS 5 ans 52%</span>
+            <span class="proto-warn">Toxicités immunitaires G3-4 : 55% · Hépatite, colite, endocrinopathies</span>
+          </td></tr>
+          <tr><td class="l1">Alt BRAF WT</td><td>
+            <span class="proto-name">Pembrolizumab</span>
+            <span class="proto-doses">200 mg J1/21 ou 400 mg J1/42 · Moins toxique que nivo+ipi</span>
+            <span class="proto-cond">KEYNOTE-006 · OS 5 ans 43%</span>
+          </td></tr>
+          <tr><td class="l1"><span class="proto-bio">BRAF V600E (~50%)</span></td><td>
+            <span class="proto-name">Dabrafenib + Trametinib (PO) ou immunothérapie</span>
+            <span class="proto-doses">Dabrafenib 150 mg×2/j + Trametinib 2 mg/j PO · Choix selon charge tumorale / urgence</span>
+          </td></tr>
+          <tr><td class="adj">Adjuvant stade III</td><td>
+            <span class="proto-name">Pembrolizumab × 1 an (KEYNOTE-054)</span>
+            <span class="proto-doses">200 mg J1/21 × 18 cycles · ou Nivolumab 480 mg J1/28 × 1 an</span>
+            <span class="proto-bio">Si BRAF V600E : Dabrafenib + Trametinib PO × 1 an (alternatif)</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">TDM TAP · IRM cérébrale · Biopsie cutanée ou ganglionnaire (architecture nécessaire : pas cytologie) · LDH · NFS · bilan hépatique</span>
+            <span class="proto-bio">BRAF V600E/K (~50%) → thérapie ciblée · PD-L1 optionnel · NRAS muté (~20%) · c-KIT muté (acral/muqueux) · Charge mutationnelle élevée (TMB)</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">TSH/glycémie/transaminases avant chaque cycle ICI · LDH suivi réponse · TDM réévaluation /12 sem · Vitiligo = bon signe pronostique · Anti-BRAF : ECG (QTc) · créatinine (phototoxicité)</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  THYROÏDE  -->
+      <div class="cancer-card" data-group="thyroide">
+        <div class="cc-head" style="border-left: 4px solid #00695c;">
+          
+          <div><div class="cc-title">Cancer de la thyroïde</div><div class="cc-sub">Différencié · Médullaire · Anaplasique · Radioiode</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="adj"><span class="proto-bio">Différencié (CDT) haut risque</span></td><td>
+            <span class="proto-name">Lénvatinib 24 mg/j ou Sorafénib 400 mg×2/j PO</span>
+            <span class="proto-doses">Après chirurgie + radioiode (¹³¹I) · Réfractaire au radioiode (RAIR)</span>
+            <span class="proto-cond">SELECT (lénvatinib) · PFS 18,3 vs 3,6 mois · ORR 65% · Standard RAIR</span>
+            <span class="proto-warn">Lénvatinib : HTA ++ (90%) · Protéinurie · Fatigue · Diarrhée · Surveillance PA avant chaque consultation</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">Médullaire (CMT) · RET muté</span></td><td>
+            <span class="proto-name">Selpercatinib 160 mg×2/j ou Vandetanib 300 mg/j PO</span>
+            <span class="proto-doses">Cabozantinib 140 mg/j PO si selpercatinib non disponible</span>
+            <span class="proto-cond">LIBRETTO-001 · ORR 69% (RET muté) · Selpercatinib = standard si RET muté</span>
+            <span class="proto-bio">RET muté somatique ~60% CMT · RET germinal = NEM2 (chirurgie prophylactique enfance) · Calcitonine + ACE marqueurs suivi</span>
+          </td></tr>
+          <tr><td class="l1"><span class="proto-bio">Anaplasique (ATC) · BRAF V600E</span></td><td>
+            <span class="proto-name">Dabrafenib 150 mg×2/j + Trametinib 2 mg/j PO</span>
+            <span class="proto-doses">BRAF V600E ~40% ATC · ORR 56% (ROAR basket trial) · Urgence diagnostique</span>
+            <span class="proto-warn">Cancer anaplasique = pronostic catastrophique (médiane survie 3-5 mois) · Pembrolizumab ± chimio si BRAF WT</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">Échographie cervicale + cytoponction (Bethesda) · TDM cervico-thoracique · Scintigraphie corps entier post-thyroïdectomie · TSH + Tg + Ac anti-Tg · Calcitonine + CEA si CMT suspecté · Calcémie (parathyroïdes)</span>
+            <span class="proto-bio">Statut BRAF V600E (papillaire) · RET (médullaire) · Panel NGS si ATC</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">CDT : Tg + Ac anti-Tg tous les 6 mois + écho cervicale · Scintigraphie /1-2 ans si Tg détectable · TSH cible &lt;0,1 mUI/L (freinage) si haut risque · CMT : Calcitonine + CEA avant chaque consultation · Lénvatinib/sorafénib : PA avant chaque prise de rendez-vous</span>
+          </td></tr>
+        </table>
+      </div>
+
+      <!--  SARCOMES  -->
+      <div class="cancer-card" data-group="sarcomes">
+        <div class="cc-head" style="border-left: 4px solid #4e342e;">
+          
+          <div><div class="cc-title">Sarcomes des tissus mous</div><div class="cc-sub">&gt;80 sous-types · RCP NetSarc obligatoire</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">L1 M+ (tous)</td><td>
+            <span class="proto-name">Doxorubicine</span>
+            <span class="proto-doses">75 mg/m² IV J1/22 (ou 25 mg/m²/j CI J1-3)</span>
+            <span class="proto-warn">FEVG avant + toutes les 3 cures · Cumul max 450-550 mg/m²</span>
+          </td></tr>
+          <tr><td class="l1">L1 si RC souhaitée</td><td>
+            <span class="proto-name">AI (Doxorubicine + Ifosfamide)</span>
+            <span class="proto-doses">Doxo 75 mg/m² + Ifosf 5-10 g/m²/j CI J1-3 + Mesna · ORR ↑ mais OS identique</span>
+            <span class="proto-warn">Ifosfamide : Mesna obligatoire · Encéphalopathie : méthylène bleu 50 mg IV</span>
+          </td></tr>
+          <tr><td class="l1"><span class="proto-bio">LMS spécifique</span></td><td>
+            <span class="proto-name">Gemcitabine + Docétaxel</span>
+            <span class="proto-doses">Gem 900 mg/m² (90 min fixe !) J1J8 + Doce 75-100 mg/m² J8 / J22</span>
+            <span class="proto-warn">Ifosfamide = INEFFICACE dans LMS !</span>
+          </td></tr>
+          <tr><td class="l2">2L (LMS/liposarcome/synovio)</td><td>
+            <span class="proto-name">Trabectidine (Yondelis)</span>
+            <span class="proto-doses">1,5 mg/m² CI 24h J1/21</span>
+          </td></tr>
+          <tr><td class="l2">Angiosarcome</td><td>
+            <span class="proto-name">Paclitaxel hebdo ou Navelbine</span>
+            <span class="proto-doses">Pac 80 mg/m²/sem · Angiotax</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">GIST – KIT/PDGFRA</span></td><td>
+            <span class="proto-name">Imatinib → Sunitinib → Régorafénib</span>
+            <span class="proto-doses">Imatinib 400 mg/j PO (800 mg/j si exon 9) → Sunit 37,5 mg/j → Régoraf 160 mg/j × 21/28<br>
+            PDGFRA D842V → Avapritinib 300 mg/j PO</span>
+          </td></tr>
+          <tr><td class="po">Sarcome épithélioïde</td><td>
+            <span class="proto-name">Tazemetostat (Tazverik) PO</span>
+            <span class="proto-doses">800 mg×2/j PO · Perte SMARCB1/INI1 obligatoire</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  LYMPHOME B AGRESSIF  -->
+      <div class="cancer-card" data-group="hemato">
+        <div class="cc-head" style="border-left: 4px solid #c62828;">
+          
+          <div><div class="cc-title">Lymphome B Agressif (LDGCB)</div><div class="cc-sub">R-CHOP · R-DA-EPOCH · Auto-greffe · CAR-T</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">TEP-scanner (Ann Arbor + Deauville) · Biopsie ganglionnaire (histologie + FISH MYC/BCL2/BCL6) · LDH · β2-microglobuline · BOM si suspicion · IHC CD20 · ECOG · VIH/VHB/VHC</span>
+            <span class="proto-bio">IPI score (0-5) : âge &gt;60 · LDH &gt;N · ECOG ≥2 · stade III-IV · &gt;1 site extranodal · Double-hit (MYC+BCL2/BCL6) → mauvais pronostic</span>
+          </td></tr>
+          <tr><td class="l1">L1 standard</td><td>
+            <span class="proto-name">R-CHOP 21 × 6 cycles</span>
+            <span class="proto-doses">Rituximab 375 mg/m² IV J1 · Cyclophosphamide 750 mg/m² IV J1 · Doxorubicine 50 mg/m² IV J1 · Vincristine 1,4 mg/m² IV J1 (max 2 mg) · Prednisone 40 mg/m²/j PO J1-5</span>
+            <span class="proto-cond">FEVG ≥50% obligatoire avant anthracycline</span>
+          </td></tr>
+          <tr><td class="l1">Double-hit / ECOG ≥2</td><td>
+            <span class="proto-name">R-DA-EPOCH × 6 cycles</span>
+            <span class="proto-doses">Rituximab 375 mg/m² J1 + Étoposide 50 mg/m²/j CI J1-4 + Doxorubicine 10 mg/m²/j CI J1-4 + Vincristine 0,4 mg/m²/j CI J1-4 + Cyclophosphamide 750 mg/m² J5 + Prednisone 60 mg/m²×2/j J1-5</span>
+          </td></tr>
+          <tr><td class="l2">L2 chimio-sensible</td><td>
+            <span class="proto-name">R-DHAP ou R-ICE → ASCT (auto-greffe)</span>
+            <span class="proto-doses">R-DHAP : Rituximab + Dexaméthasone 40 mg J1-4 + Cytarabine 2g/m²×2 J2 + Cisplatine 100 mg/m² CI J1</span>
+          </td></tr>
+          <tr><td class="l2">L3+ / réfractaire</td><td>
+            <span class="proto-name">CAR-T anti-CD19 (Axicabtagene · Tisagenlecleucel)</span>
+            <span class="proto-warn">Leucaphérèse → Flu+Cy J-5 à J-3 → CAR-T J0 · CRS → Tocilizumab si G≥2 · ICANS → Corticoïdes</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">NFS avant chaque cycle · FEVG avant traitement · TEP après 2-4 cycles (Deauville 1-3 = réponse) · LDH · β2-microglobuline · Prophylaxie VHB (Lamivudine) si Ac anti-HBc+</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  LYMPHOME DE HODGKIN  -->
+      <div class="cancer-card" data-group="hemato">
+        <div class="cc-head" style="border-left: 4px solid #e53935;">
+          
+          <div><div class="cc-title">Lymphome de Hodgkin (LH)</div><div class="cc-sub">ABVD · BV-AVD · Pembrolizumab</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="bilan">Bilan pré-thérap</td><td>
+            <span class="proto-doses">TEP-scanner initial · NFS · LDH · VS · Albumine · β2-microglobuline · BOM · Spermocryo si désir fertilité · EFR avant bléomycine</span>
+            <span class="proto-bio">Score IPS stade avancé · Classification Ann Arbor I-IV · Stade I-II favorable vs défavorable</span>
+          </td></tr>
+          <tr><td class="l1">Stade I-II favorable</td><td>
+            <span class="proto-name">ABVD × 2-4 cycles + RT 20 Gy</span>
+            <span class="proto-doses">Adriamycine 25 mg/m² J1J15 · Bléomycine 10 UI/m² J1J15 · Vinblastine 6 mg/m² J1J15 · Dacarbazine 375 mg/m² J1J15 / J29</span>
+            <span class="proto-warn">EFR avant chaque cycle (bléomycine) · Pneumopathie bléomycine (5-10%) → arrêt dès tout signe</span>
+          </td></tr>
+          <tr><td class="l1">Stade avancé (III-IV)</td><td>
+            <span class="proto-name">BV-AVD × 6 cycles (sans bléomycine)</span>
+            <span class="proto-doses">Brentuximab védotin 1,2 mg/kg J1J15 + Adriamycine 25 mg/m² + Vinblastine 6 mg/m² + Dacarbazine 375 mg/m² J1J15</span>
+            <span class="proto-cond">ECHELON-1 · G-CSF obligatoire</span>
+            <span class="proto-warn">Neuropathie périphérique brentuximab → évaluation neurologique avant chaque cycle</span>
+          </td></tr>
+          <tr><td class="l2">Rechute/réfractaire</td><td>
+            <span class="proto-name">Pembrolizumab 200 mg IV /J21</span>
+            <span class="proto-doses">AMM LH R/R après ≥3 lignes · ORR 69% · RC 22%</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">EFR avant chaque cycle si bléomycine · TEP après 2 cycles (Deauville → adapte traitement) · NFS J1 · β-HCG si femme en âge de procréer</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  LYMPHOME FOLLICULAIRE  -->
+      <div class="cancer-card" data-group="hemato">
+        <div class="cc-head" style="border-left: 4px solid #303f9f;">
+          
+          <div><div class="cc-title">Lymphome Folliculaire (LF)</div><div class="cc-sub">Indolent · CD20+ · t(14;18) BCL2</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">L1 stade III-IV</td><td>
+            <span class="proto-name">R-CHOP ou R-CVP × 6 → maintenance Rituximab</span>
+            <span class="proto-doses">R-CVP : Rituximab 375 + Cyclo 750 + Vincristine 1,4 (max 2 mg) + Pred 40 mg/m² J1-5 / J22<br>
+            Maintenance : Rituximab 375 mg/m² J1/56 × 2 ans</span>
+          </td></tr>
+          <tr><td class="l1">1L (haut risque FLIPI)</td><td>
+            <span class="proto-name">Obinutuzumab + CHOP → Obinutuzumab maintenance</span>
+            <span class="proto-doses">Obinutuzumab 1000 mg J1,8,15 C1 puis J1 C2-6 + CHOP / 21j × 6 → Obinutuzumab 1000 mg / 2 mois × 2 ans</span>
+            <span class="proto-cond">GALLIUM : PFS 80% vs 73% vs R-CHOP à 3 ans · préféré si FLIPI ≥2</span>
+          </td></tr>
+          <tr><td class="l2">Réfractaire</td><td>
+            <span class="proto-name">Mosunetuzumab (CD20×CD3 bispécifique)</span>
+            <span class="proto-doses">Step-up dosing SC : C1J1 1 mg → C1J8 2 mg → C1J15 60 mg → cycle 2+ 30 mg J1 / 21j · durée fixe 8-17 cycles</span>
+            <span class="proto-cond">LDGCB R/R ≥2L ou LF R/R ≥2L · RC 60% LF · AMM EMA 2022</span>
+          </td></tr>
+          <tr><td class="l2">LF transformé</td><td>
+            <span class="proto-name">Tisagenlecleucel (CAR-T Kymriah) ou R-CHOP</span>
+            <span class="proto-doses">CAR-T si LBDGC transformé réfractaire</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  LCR T CD30+  -->
+      <div class="cancer-card" data-group="hemato">
+        <div class="cc-head" style="border-left: 4px solid #4527a0;">
+          
+          <div><div class="cc-title">Lymphome T périphérique CD30+</div><div class="cc-sub">AITL · ALCL ALK−/ALK+ · CD30 obligatoire</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">L1</td><td>
+            <span class="proto-name">BV-CHP × 6</span>
+            <span class="proto-doses">Brentuximab 1,8 mg/kg + Cyclo 750 + Doxo 50 + Pred 100 mg/j J1-5 / J22<br>
+            <em>(Vincristine remplacée par BV)</em></span>
+            <span class="proto-cond">ECHELON-2 · PFS 48,2 vs 20,8 mois vs R-CHOP</span>
+            <span class="proto-bio">CD30 IHC obligatoire avant prescription</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  LMA  -->
+      <div class="cancer-card" data-group="hemato">
+        <div class="cc-head" style="border-left: 4px solid #b71c1c;">
+          
+          <div><div class="cc-title">Leucémie Myéloïde Aiguë (LMA)</div><div class="cc-sub">Caryotype · FLT3 · IDH · NPM1</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">Induction</td><td>
+            <span class="proto-name">7+3 (Cytarabine + Daunorubicine)</span>
+            <span class="proto-doses">Cytarabine 100-200 mg/m²/j CI J1-7 + Daunorubicine 60-90 mg/m² J1-3 (ou Idarubicine 12 mg/m² J1-3)</span>
+            <span class="proto-warn">Aplasie profonde J10-J20 · chambre stérile · posaconazole prophylaxie</span>
+          </td></tr>
+          <tr><td class="l1"><span class="proto-bio">FLT3 muté (30-35%)</span></td><td>
+            <span class="proto-name">7+3 + Midostaurin</span>
+            <span class="proto-doses">+ Midostaurin 50 mg×2/j PO J8-21 (RATIFY · OS 74 vs 26% à 4 ans)</span>
+          </td></tr>
+          <tr><td class="adj">Consolidation</td><td>
+            <span class="proto-name">HiDAC (Cytarabine haute dose)</span>
+            <span class="proto-doses">Cytarabine 3 g/m² × 2/j J1 J3 J5 (6 perfusions 3h) × 3 cycles</span>
+            <span class="proto-warn">Toxicité cérébelleuse : évaluation neurologique avant chaque dose · Collyres corticoïdes obligatoires</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">IDH1 muté</span></td><td>
+            <span class="proto-doses">Ivosidenib 500 mg/j PO · Olutasidenib PO</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">IDH2 muté</span></td><td>
+            <span class="proto-doses">Enasidenib 100 mg/j PO</span>
+          </td></tr>
+          <tr><td class="po">Sujet âgé CI chimio</td><td>
+            <span class="proto-name">Vénétoclax + Azacitidine</span>
+            <span class="proto-doses">Vénéto 400 mg/j PO J1-28 (rampe 100→200→400) + Azacitidine 75 mg/m²/j SC J1-7/J28</span>
+            <span class="proto-cond">VIALE-A · RC 66% · OS 14,7 vs 9,6 mois</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  LMC  -->
+      <div class="cancer-card" data-group="hemato">
+        <div class="cc-head" style="border-left: 4px solid #1b5e20;">
+
+          <div><div class="cc-title">Leucémie Myéloïde Chronique (LMC)</div><div class="cc-sub">BCR-ABL1 · Ph+ · TKI · TFR possible</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">1G TKI</td><td>
+            <span class="proto-name">Imatinib (Glivec)</span>
+            <span class="proto-doses">400 mg/j PO · Prise avec repas (tolérance GI) · Référence historique</span>
+          </td></tr>
+          <tr><td class="l1">2G TKI</td><td>
+            <span class="proto-name">Dasatinib 100 mg/j ou Nilotinib 300 mg×2/j PO</span>
+            <span class="proto-doses">Dasatinib : épanchement pleural (surveillance) · Nilotinib : glycémie/cholestérol/QTc · Prise à jeun ×2/j</span>
+            <span class="proto-cond">Réponse moléculaire plus rapide → préférés si objectif TFR</span>
+          </td></tr>
+          <tr><td class="l2">3G TKI / Résistance</td><td>
+            <span class="proto-name">Ponatinib (T315I) ou Asciminib (STAMP inhibiteur)</span>
+            <span class="proto-doses">Ponatinib 15-45 mg/j PO · Asciminib 40 mg×2/j PO (ASCEMBL · thrombopénie)</span>
+            <span class="proto-bio">T315I = mutation de résistance à tous TKI sauf ponatinib/asciminib · Séquençage BCR-ABL domaine kinase si échec</span>
+          </td></tr>
+          <tr><td class="po">TFR (arrêt TKI)</td><td>
+            <span class="proto-name">Tentative d'arrêt TKI (Treatment-Free Remission)</span>
+            <span class="proto-doses">Conditions : TKI ≥ 3 ans + RMp (MR4) stable ≥ 2 ans · 50-60% maintiennent RMp · PCR mensuelle × 6 mois puis /3 mois</span>
+            <span class="proto-warn">Syndrome de sevrage (arthralgies) · Reprise TKI si perte MMR</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan initial</td><td>
+            <span class="proto-doses">Caryotype moelle + FISH BCR-ABL1 · PCR BCR-ABL1 quantitative (IS) · Score Sokal / EURO / EUTOS · NFS + LDH + bilan hépatique + lipides · TDM TAP si phase accélérée/blastique</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">BCR-ABL1 qPCR : J3 → J6 → J12 → /6 mois si RMp (IS) · Objectif : RCyC J3 → MMR (≤0,1%) J12 → MR4 si TFR · NFS + hépatique mensuel × 3 mois puis /3 mois · Dasatinib : radio thorax si dyspnée · Nilotinib : QTc avant chaque prescription</span>
+          </td></tr>
+        </table>
+      </div>
+
+            <!--  LLC  -->
+      <div class="cancer-card" data-group="hemato">
+        <div class="cc-head" style="border-left: 4px solid #0d47a1;">
+
+          <div><div class="cc-title">Leucémie Lymphoïde Chronique (LLC)</div><div class="cc-sub">CD5+CD23+CD19+ · del17p · TP53 · BTKi · venetoclax</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">L1 fit, sans del17p/TP53</td><td>
+            <span class="proto-name">Venetoclax + Obinutuzumab (CLL14)</span>
+            <span class="proto-doses">Obinutuzumab : cycle 1 fractionné (100 mg J1, 900 mg J2, 1000 mg J8 et J15) · Venetoclax rampe 5 sem : 20→50→100→200→400 mg/j × 12 cycles au total</span>
+            <span class="proto-cond">CLL14 · PFS 4 ans 74,1% · Traitement durée fixe (1 an) · Supérieur à chlorambucil-obinutuzumab</span>
+            <span class="proto-warn">Syndrome de lyse tumorale (TLS) ++ · Stratification risque obligatoire (masse tumorale) · Hospitalisation si haut risque TLS</span>
+          </td></tr>
+          <tr><td class="l1">L1 non fit ou alt</td><td>
+            <span class="proto-name">Ibrutinib 420 mg/j PO ou Acalabrutinib 100 mg×2/j PO</span>
+            <span class="proto-doses">Traitement continu jusqu'à progression · Acalabrutinib : meilleur profil cardiaque (moins de FA et HTA)</span>
+            <span class="proto-cond">ELEVATE-TN · Alliance · Zanubrutinib 160 mg×2/j (ALPINE) : non inférieur ibrutinib, tolérance CV</span>
+          </td></tr>
+          <tr><td class="po"><span class="proto-bio">del17p / TP53 muté</span></td><td>
+            <span class="proto-name">BTKi (ibrutinib/acalabrutinib/zanubrutinib) ou Venetoclax + Rituximab</span>
+            <span class="proto-doses">FCR contre-indiqué si del17p · Ven-R 24 cycles (MURANO · PFS 4 ans 57%) · BTKi en continu</span>
+          </td></tr>
+          <tr><td class="bilan">Bilan initial</td><td>
+            <span class="proto-doses">Immunophénotypage + Score de Matutes · FISH panel : del13q, trisomie12, del11q (ATM), del17p (TP53) · Mutation TP53 · Statut IGHV muté/non muté (pronostic) · TDM TAP + bilan sanguin : LDH, beta2-microglobuline · BOM si indication thérapeutique</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring TLS (venetoclax)</td><td>
+            <span class="proto-doses">Risque TLS stratifié : bas (nganglions &lt;5 cm + lympho &lt;25 G/L) → ambulatoire · Intermédiaire → bilan 6-8h post-dose, 1re prise hospitalière · Haut → hospitalisation pour 1er palier · Allopurinol 300 mg/j 2-3j avant + hyperhydratation 1,5-2 L/j · Ionogramme + créatinine + acide urique + LDH avant chaque palier</span>
+            <span class="proto-warn">BTKi : interactions médicamenteuses majeures (antifongiques, anticoagulants) · Ibrutinib : FA, hypertension, saignements · Acalabrutinib : céphalées initiales</span>
+          </td></tr>
+        </table>
+      </div>
+
+          <!--  MYÉLOME  -->
+      <div class="cancer-card" data-group="hemato">
+        <div class="cc-head" style="border-left: 4px solid #6a1b9a;">
+          
+          <div><div class="cc-title">Myélome multiple</div><div class="cc-sub">Bortézomib · Lénalidomide · Daratumumab</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="l1">L1 éligible greffe</td><td>
+            <span class="proto-name">DVRd puis ASCT puis Lénalidomide maintenance</span>
+            <span class="proto-doses">Daratumumab SC 1800 mg + Bortézomib 1,3 mg/m² SC J1J4J8J11 + Lénalidomide 25 mg PO J1-21 + Dexa 40 mg PO J1J2J4J5J8J9J11J12 / J22 × 4</span>
+            <span class="proto-warn">Dara SC disponible : 3-5 min (vs 6-7h IV) · Groupage sanguin avant (CD38 sur GR)</span>
+          </td></tr>
+          <tr><td class="l1">L1 non éligible greffe</td><td>
+            <span class="proto-name">DRd (Daratumumab + Lénalidomide + Dexa)</span>
+            <span class="proto-doses">Dara 1800 mg SC + Lénalidomide 25 mg J1-21 + Dexa 40 mg PO J1J8J15J22 / J28 · jusqu'à progression</span>
+            <span class="proto-cond">MAIA · OS 67,6 mois</span>
+          </td></tr>
+          <tr><td class="l2">L2+</td><td>
+            <span class="proto-name">DPd (Dara + Pomalidomide + Dexa) · VKd · Isatux-KPd</span>
+            <span class="proto-doses">Pomalidomide 4 mg/j J1-21/J28 + Dexa + Dara</span>
+          </td></tr>
+          <tr><td class="l3">≥4L (CAR-T)</td><td>
+            <span class="proto-name">Ciltacabtagene autoleucel (Carvykti®) · Idecabtagene vicleucel (Abecma®)</span>
+            <span class="proto-doses">Carvykti = 1er choix (CARTITUDE-4 : PFS HR 0,26 vs std) · Anti-BCMA CAR-T · CRS grade 1-2 fréquent · leucaphérèse + lymphodéplétion (Flu+Cyclo)</span>
+            <span class="proto-cond">CARTITUDE-4 : 2L+ · supérieur à VPd ou Pd · AMM EMA 2024</span>
+          </td></tr>
+          <tr><td class="l3">Bispécifique</td><td>
+            <span class="proto-name">Teclistamab (BCMA×CD3)</span>
+            <span class="proto-doses">Step-up dosing SC · ORR 63% · RC 39%</span>
+            <span class="proto-cond">MAJESTEC-1</span>
+          </td></tr>
+        </table>
+      </div>
+
+      <!--  LAL  -->
+      <div class="cancer-card" data-group="hemato">
+        <div class="cc-head" style="border-left: 4px solid #7c3aed;">
+          
+          <div><div class="cc-title">Leucémie Aiguë Lymphoblastique (LAL)</div><div class="cc-sub">LAL-B Ph− · LAL-B Ph+ · LAL-T · Blinatumomab · Inotuzumab · CAR-T</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="bilan">Bilan</td><td>
+            <span class="proto-doses">NFS + frottis · myélogramme (≥20% blastes) · immunophénotypage (TdT, CD19/22/10 ou CD3/7) · caryotype + FISH · PCR BCR-ABL1 (Ph?) · NGS Ph-like panel · PL + chimio IT dès J1</span>
+          </td></tr>
+          <tr><td class="l1">Induction Ph−</td><td>
+            <span class="proto-name">GRAALL (pédiatrique-like) ou HyperCVAD</span>
+            <span class="proto-doses">GRAALL : Vincristine + Prednisone + Asparaginase + Daunorubicine · RC ~90% · préféré chez adulte <60 ans</span>
+            <span class="proto-cond">HyperCVAD alterné HDMTX + Ara-C si GRAALL non disponible</span>
+          </td></tr>
+          <tr><td class="adj">Entretien Ph−</td><td>
+            <span class="proto-name">6-Mercaptopurine + Méthotrexate PO</span>
+            <span class="proto-doses">6-MP 60 mg/m²/j PO quotidien + MTX 20 mg/m²/sem PO · durée 2 ans · ± vincristine + prednisone mensuels</span>
+          </td></tr>
+          <tr><td class="l1">Induction Ph+ (BCR-ABL1)</td><td>
+            <span class="proto-name">Dasatinib + Corticoïdes ± chimio légère</span>
+            <span class="proto-doses">Dasatinib 100 mg/j ou Ponatinib 45 mg/j · associé à protocole pédiatrique-like · RC 95%</span>
+            <span class="proto-cond">D-ALBA : Blinatumomab + Dasatinib (chimio-free) · RC 98%</span>
+            <span class="proto-bio">BCR-ABL1+ obligatoire</span>
+          </td></tr>
+          <tr><td class="l2">R/R – Blinatumomab</td><td>
+            <span class="proto-name">Blinatumomab (Blincyto®)</span>
+            <span class="proto-doses">Cycle 1 : 9 mcg/j J1-7 → 28 mcg/j J8-28 · cycle 2+ : 28 mcg/j × 28j/42 · perfusion IV continue</span>
+            <span class="proto-cond">RC ~40% en rechute · AMM LAL-B CD19+</span>
+            <span class="proto-warn">CRS + ICANS : surveillance neurologique + tocilizumab si besoin · hospitalisation J1-J8</span>
+          </td></tr>
+          <tr><td class="l2">R/R – Inotuzumab</td><td>
+            <span class="proto-name">Inotuzumab ozogamicin (Besyllos®)</span>
+            <span class="proto-doses">0,8 mg/m² J1 + 0,5 mg/m² J8 + 0,5 mg/m² J15 / 21j (cycle 1) · cycles suivants 0,5 mg/m² × 3</span>
+            <span class="proto-cond">RC 80% · AMM LAL-B CD22+ R/R</span>
+            <span class="proto-warn">VOD hépatique grave (surtout post-allogreffe) · bilan hépatique hebdomadaire · CI associer ursodiol ++ </span>
+          </td></tr>
+          <tr><td class="l3">R/R – CAR-T</td><td>
+            <span class="proto-name">Tisagenlecleucel (Kymriah®)</span>
+            <span class="proto-doses">Leucaphérèse → fabrication 3-5 sem → lymphodéplétion (Flu+Cyclo J-5→J-3) → infusion J0</span>
+            <span class="proto-cond">RC 81% · AMM LAL-B <25 ans (EMA) · LAL-B adulte R/R (FDA)</span>
+            <span class="proto-warn">CRS + ICANS : tocilizumab si CRS G≥2 · dexaméthasone si ICANS</span>
+          </td></tr>
+          <tr><td class="po">LAL-T rechute</td><td>
+            <span class="proto-name">Nélarabine (Atriance®)</span>
+            <span class="proto-doses">1 500 mg/m² IV J1, J3, J5 / 21j · spécifique LAL-T</span>
+            <span class="proto-warn">Neurotoxicité (neuropathie, encéphalopathie) · surveillance neurologique</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">MRD après chaque bloc (PCR BCR-ABL1 ou flow cytometry) · PL + chimio IT × 6-8 · NFS avant chaque cycle · bilan hépatique (inotuzumab)</span>
+          </td></tr>
+        </table>
+      </div>
+
+      <!--  TUMEURS NEUROENDOCRINES  -->
+      <div class="cancer-card" data-group="digestif">
+        <div class="cc-head" style="border-left: 4px solid #0d9488;">
+          
+          <div><div class="cc-title">Tumeurs Neuroendocrines (TNE)</div><div class="cc-sub">G1/G2 digestives/pancréatiques · SSA · PRRT · Évérolimus · Sunitinib · NEC</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="bilan">Bilan</td><td>
+            <span class="proto-doses">TDM TAP injecté + IRM hépatique · <strong>TEP 68Ga-DOTATATE</strong> (gold standard) · Chromogranine A + NSE + 5-HIAA urinaires · Échocardiographie si syndrome carcinoïde · EUS si TNEp</span>
+          </td></tr>
+          <tr><td class="l1">1L G1-G2 (SSA+)</td><td>
+            <span class="proto-name">Lanréotide Autogel (Somatuline®)</span>
+            <span class="proto-doses">90-120 mg SC / 28j · ou Octréotide LAR 20-30 mg IM / 28j</span>
+            <span class="proto-cond">CLARINET : PFS 32,8 vs 18 mois · PROMID : TTP 14,3 vs 6 mois</span>
+            <span class="proto-bio">Récepteurs somatostatine positifs (TEP-DOTATATE)</span>
+          </td></tr>
+          <tr><td class="l2">2L – PRRT</td><td>
+            <span class="proto-name">Lu-177 DOTATATE (Lutathera®)</span>
+            <span class="proto-doses">7,4 GBq IV × 4 injections / 8 semaines · protection rénale acides aminés (lysine+arginine) obligatoire</span>
+            <span class="proto-cond">NETTER-1 : PFS non atteinte vs 8,4 mois (SSA seul)</span>
+            <span class="proto-bio">TEP DOTATATE+ · DFG >50 ml/min · fonction MO correcte</span>
+            <span class="proto-warn">Myélotoxicité (thrombopénie) · néphrotoxicité · nausées (antiémétiques systématiques)</span>
+          </td></tr>
+          <tr><td class="l2">2L – Ciblée</td><td>
+            <span class="proto-name">Évérolimus (Afinitor®)</span>
+            <span class="proto-doses">10 mg/j PO en continu · TNE digestives et pancréatiques</span>
+            <span class="proto-cond">RADIANT-3 (TNEp) : PFS 11 vs 4,6 mois · RADIANT-4 (non-panc) : PFS 11 vs 3,9 mois</span>
+            <span class="proto-warn">Pneumopathie interstitielle · mucite · hyperglycémie · immunosuppression</span>
+          </td></tr>
+          <tr><td class="l2">2L – TNEp seulement</td><td>
+            <span class="proto-name">Sunitinib (Sutent®)</span>
+            <span class="proto-doses">37,5 mg/j PO en continu (schéma continue) ou 50 mg/j 4sem/6</span>
+            <span class="proto-cond">PFS 11,4 vs 5,5 mois · TNEp uniquement</span>
+            <span class="proto-warn">HTA · hypothyroïdie · SPM · syndrome main-pied</span>
+          </td></tr>
+          <tr><td class="l3">NEC (carcinome peu diff)</td><td>
+            <span class="proto-name">Cisplatine + Étoposide</span>
+            <span class="proto-doses">Cisplatine 80 mg/m² J1 + Étoposide 100 mg/m² J1-3 / 21j · ou Carboplatine AUC5 + Étoposide</span>
+            <span class="proto-cond">Ki67 >55% ou peu différencié · RO ~50% · SG 8-12 mois</span>
+          </td></tr>
+          <tr><td class="po">G3 bien différencié</td><td>
+            <span class="proto-name">FOLFOX ou Témozolomide + Capécitabine (TEMCAP)</span>
+            <span class="proto-doses">TEMCAP : témozolomide 150-200 mg/m² J1-5 + capécitabine 750 mg/m² × 2/j J1-14 / 28j</span>
+            <span class="proto-cond">Ki67 20-55% bien différencié · RO 30-50%</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">TDM/IRM / 3 mois · TEP-DOTATATE si progression · Chromogranine A / 3 mois · 5-HIAA si syndrome carcinoïde · Échocardiographie annuelle · NFS + bilan hépatique / cycle</span>
+          </td></tr>
+        </table>
+      </div>
+
+      <!--  GLIOBLASTOME  -->
+      <div class="cancer-card" data-group="neuro">
+        <div class="cc-head" style="border-left: 4px solid #1d4ed8;">
+          
+          <div><div class="cc-title">Glioblastome (GBM)</div><div class="cc-sub">IDH-wt grade 4 · Protocole de Stupp · TTFields · Lomustine rechute</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="bilan">Bilan</td><td>
+            <span class="proto-doses">IRM cérébrale 1,5T/3T ± spectroscopie · IRM 24-72h post-op · TDM TAP (si métastase cérébrale suspectée) · Anatomopathologie : IDH + MGMT méthylation + TERT + EGFR · TEP méthionine si doute récidive/radionécrose</span>
+          </td></tr>
+          <tr><td class="adj">Chirurgie</td><td>
+            <span class="proto-name">Résection maximale guidée 5-ALA (Gliolan®)</span>
+            <span class="proto-doses">5-ALA 20 mg/kg PO 3h avant induction · résection sous fluorescence · + neuronavigation ± monitorage peropératoire</span>
+            <span class="proto-cond">Résection complète 58% vs 24% guidée vs blanche · bénéfice survie</span>
+          </td></tr>
+          <tr><td class="l1">Standard – Stupp</td><td>
+            <span class="proto-name">RT + Témozolomide concomitant → TMZ adjuvant</span>
+            <span class="proto-doses">RT : 60 Gy (30 × 2 Gy) + TMZ <strong>75 mg/m²/j J1-42</strong> (7j/7) → TMZ <strong>150-200 mg/m²/j J1-5 / 28j × 6 cycles</strong></span>
+            <span class="proto-cond">Stupp 2005 NEJM · SG 14,6 vs 12,1 mois · standard international</span>
+            <span class="proto-bio">MGMT méthylé : SG 21 mois · MGMT non méthylé : SG 14 mois</span>
+          </td></tr>
+          <tr><td class="adj">TTFields (Optune®)</td><td>
+            <span class="proto-name">Champs électriques alternants 200 kHz</span>
+            <span class="proto-doses">Dispositif porté en continu sur cuir chevelu (>18h/j) · associé à TMZ adjuvant</span>
+            <span class="proto-cond">EF-14 : SG 20,9 vs 16 mois · PFS 6,7 vs 4 mois · AMM FDA + EMA</span>
+            <span class="proto-warn">Réactions cutanées locales (72%) · rotation des électrodes nécessaire</span>
+          </td></tr>
+          <tr><td class="po">Sujet âgé >65 ans</td><td>
+            <span class="proto-name">RT hypofractionnée ± TMZ</span>
+            <span class="proto-doses">RT 40 Gy (15 × 2,67 Gy) ± TMZ concomitant + adjuvant · ou RT 25 Gy (5 fr) si très âgé/PS altéré</span>
+            <span class="proto-cond">NORDIC trial · MGMT méthylé → TMZ seul possible si RT CI</span>
+          </td></tr>
+          <tr><td class="l2">Récidive</td><td>
+            <span class="proto-name">Bévacizumab ± Lomustine · ou Lomustine seule</span>
+            <span class="proto-doses">Bévacizumab 10 mg/kg / 2sem IV · Lomustine (CCNU) 100-130 mg/m² PO J1 / 6 sem</span>
+            <span class="proto-cond">Bévacizumab : contrôle œdème + PFS · pas de bénéfice SG (AVAGLIO)</span>
+            <span class="proto-warn">Réirradiation si >6 mois post-RT initiale et volume limité (SRS)</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">IRM cérébrale / 8-12 sem · NFS + bilan hépatique avant chaque cycle TMZ · Attention pseudo-progression (J60-90) : ne pas modifier traitement · Lévétiracétam si comitialité</span>
+          </td></tr>
+        </table>
+      </div>
+
+      <!--  CANCER DE L'ŒSOPHAGE  -->
+      <div class="cancer-card" data-group="digestif">
+        <div class="cc-head" style="border-left: 4px solid #f97316;">
+          
+          <div><div class="cc-title">Cancer de l'Œsophage</div><div class="cc-sub">SCC · ADK · CROSS · CheckMate-648 · Nivolumab adjuvant</div></div>
+        </div>
+        <table class="proto-table">
+          <tr><td class="bilan">Bilan</td><td>
+            <span class="proto-doses">FOGD + biopsies · EUS (staging T et N) · TDM TAP injecté · TEP-FDG · HER2 IHC/FISH (ADK OGJ) · PD-L1 CPS (anti-PD1) · TMB · bilan nutritionnel (IMC, albumine)</span>
+          </td></tr>
+          <tr><td class="neo">Néoadj résécable – CROSS</td><td>
+            <span class="proto-name">Paclitaxel + Carboplatine + RT 41,4 Gy</span>
+            <span class="proto-doses">Paclitaxel 50 mg/m²/sem J1,8,15,22,29 + Carboplatine AUC2/sem + RT 41,4 Gy (23 fr × 1,8 Gy) → œsophagectomie</span>
+            <span class="proto-cond">van Hagen 2012 · SG 49,4 vs 24 mois · standard SCC + ADK résécable</span>
+          </td></tr>
+          <tr><td class="neo">Néoadj ADK OGJ – FLOT</td><td>
+            <span class="proto-name">FLOT4 péri-opératoire</span>
+            <span class="proto-doses">Docétaxel 50 mg/m² + Oxaliplatine 85 mg/m² + Folinique 200 mg/m² + 5-FU 2600 mg/m² / 2sem × 4 → chirurgie → × 4</span>
+            <span class="proto-cond">ADK jonction OGJ type I-II · FLOT4 trial</span>
+          </td></tr>
+          <tr><td class="adj">Adjuvant post-RCT+chir</td><td>
+            <span class="proto-name">Nivolumab (CheckMate-577)</span>
+            <span class="proto-doses">Nivolumab 240 mg IV / 2sem × 16 puis 480 mg / 4sem · 1 an total · si résidu ypT1+</span>
+            <span class="proto-cond">DFS 22,4 vs 11 mois · SCC + ADK · indépendant PD-L1 · <strong>standard</strong></span>
+            <span class="proto-bio">ypT1+ après RCT néoadjuvante + chirurgie</span>
+          </td></tr>
+          <tr><td class="po">SCC inopérable</td><td>
+            <span class="proto-name">RCT exclusive – Cisplatine + 5-FU + RT 50 Gy</span>
+            <span class="proto-doses">Cisplatine 75 mg/m² J1,29 + 5-FU 1000 mg/m²/j J1-4, J29-32 + RT 50 Gy (25 fr) · PRODIGE 5/ACCORD 17</span>
+          </td></tr>
+          <tr><td class="l1">M+ SCC PD-L1 CPS≥1</td><td>
+            <span class="proto-name">Nivolumab + Cisplatine + 5-FU</span>
+            <span class="proto-doses">Nivolumab 360 mg J1 + Cisplatine 80 mg/m² J1 + 5-FU 800 mg/m²/j J1-5 / 28j</span>
+            <span class="proto-cond">CheckMate-648 · SG 13,2 vs 10,7 mois · AMM</span>
+            <span class="proto-bio">CPS ≥ 1 (ou Nivo+Ipi si TMB-H)</span>
+          </td></tr>
+          <tr><td class="l1">M+ ADK PD-L1 CPS≥5</td><td>
+            <span class="proto-name">Pembrolizumab + Cisplatine + 5-FU (ou CAPOX)</span>
+            <span class="proto-doses">Pembrolizumab 200 mg J1 + Cisplatine 80 mg/m² J1 + 5-FU 800 mg/m²/j J1-5 / 28j · ou Pembro + CAPOX</span>
+            <span class="proto-cond">KEYNOTE-590 · SG 13,9 vs 11,1 mois</span>
+            <span class="proto-bio">CPS ≥ 5</span>
+          </td></tr>
+          <tr><td class="l1">M+ HER2+</td><td>
+            <span class="proto-name">Trastuzumab + Nivolumab + CAPOX</span>
+            <span class="proto-doses">Trastuzumab 8→6 mg/kg + Nivolumab 360 mg + CAPOX / 21j · ADK OGJ HER2 IHC3+ ou IHC2+/FISH+</span>
+            <span class="proto-bio">HER2 IHC3+ ou IHC2+/FISH+</span>
+          </td></tr>
+          <tr><td class="l2">2L SCC</td><td>
+            <span class="proto-name">Nivolumab (ATTRACTION-3)</span>
+            <span class="proto-doses">Nivolumab 240 mg / 2sem ou 480 mg / 4sem · SG 10,9 vs 8,4 mois vs chimio</span>
+          </td></tr>
+          <tr><td class="l2">2L ADK</td><td>
+            <span class="proto-name">Ramucirumab + Paclitaxel</span>
+            <span class="proto-doses">Ramucirumab 8 mg/kg J1+J8 + Paclitaxel 80 mg/m² J1+J8+J15 / 28j · RAINBOW</span>
+          </td></tr>
+          <tr><td class="monitor">Monitoring</td><td>
+            <span class="proto-doses">NFS + créatinine + FEVG (trastuzumab) avant chaque cycle · HER2 sur biopsie métastatique si possible · Nutrition : IMC + albuminémie + NRS2002 · Imagerie / 8 sem · TEP-FDG évaluation post-néoadj (4-6 sem après CROSS)</span>
+          </td></tr>
+        </table>
+      </div>
+
+      </div><!-- fin proto-grid -->
+    <button id="proto-top-btn" onclick="protoPanel.scrollTo({top:0,behavior:'smooth'})" title="Retour en haut">↑</button>
+</div><!-- fin proto-panel -->
+
+
+  <!-- ─── CHECKLISTS ───────────────────────────────────────────────────────── -->
+  <div id="checklist-panel">
+    <div class="panel-header">
+      <h2>Checklists pré-thérapeutiques</h2>
+    </div>
+    <div class="cl-grid" id="cl-container">
+    </div>
+  </div><!-- fin checklist-panel -->
+  <!-- ─── FICHE DE GARDE ──────────────────────────────────────────────────── -->
+  <div id="garde-panel">
+    <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;">
+      <h2 style="color:#f85149;"> Fiche de Garde – Onco-Hématologie</h2>
+      <button onclick="window.print()" style="padding:6px 14px;background:#21262d;border:1px solid #30363d;border-radius:8px;color:#8b949e;font-size:0.78rem;cursor:pointer;">Imprimer</button>
+    </div>
+    <div class="garde-grid">
+
+      <!-- URGENCES ONCOLOGIQUES -->
+      <div class="garde-card garde-red">
+        <div class="garde-card-head">Urgences oncologiques — Doses immédiates</div>
+        <table class="garde-table">
+          <tr><td class="gc-label">Hypercalcémie</td><td><span class="gc-drug">Zolédronique</span> 4 mg/15 min IV (DFG >35) · Hydratation NaCl 0,9% 2-3 L/24h · Furosémide si surcharge · Calcitonine si urgent (4 UI/kg SC/6h)</td></tr>
+          <tr><td class="gc-label">Compression médullaire</td><td><span class="gc-drug">Dexaméthasone</span> <span class="gc-alert">16 mg IV bolus</span> puis 4 mg × 4/j · RT urgente dans 24h · Neurochir si instable</td></tr>
+          <tr><td class="gc-label">TLS (syndrome lyse)</td><td><span class="gc-drug">Rasburicase</span> 0,2 mg/kg IV × 1 (urate >8 mg/dL ou haut risque) · <span class="gc-drug">Allopurinol</span> 300 mg/j prophylaxie · Hydratation 3 L/m²/j · Arrêt K⁺ et phosphore · Surveillance ECG</td></tr>
+          <tr><td class="gc-label">Aplasie fébrile haut risque</td><td>Hémocultures × 2 → <span class="gc-drug">Pipéracilline-tazobactam</span> 4 g/0,5 g × 3-4/j IV <em>dans l'heure</em> · Si allergique β-lactamines : aztréonam 2 g × 3/j · Si sepsis/choc : <span class="gc-drug">Imipénème</span> 1 g × 3/j</td></tr>
+          <tr><td class="gc-label">SVCS</td><td><span class="gc-drug">Dexaméthasone</span> 8–16 mg IV · Position demi-assise · Anticoagulation si thrombus · Stent/RT urgente si instable</td></tr>
+          <tr><td class="gc-label">Hyperleucocytose (&gt;100 G/L)</td><td><span class="gc-drug">Hydroxyurée</span> 50–100 mg/kg/j PO · Hydratation 3 L/m²/j · Allopurinol · Leucaphérèse si symptomatique</td></tr>
+          <tr><td class="gc-label">Thrombopénie &lt;10 G/L</td><td>CPA 1 U/10 kg · Objectif >10 G/L (prophy) ou >20 G/L (fièvre) ou >50 G/L (geste) · Vérifier refractarité (anti-HLA)</td></tr>
+          <tr><td class="gc-label">CIVD</td><td>Fibrinogène &lt;1,5 g/L + saignement : <span class="gc-drug">Clottafact®</span> 30–50 mg/kg IV · PFC 15–20 mL/kg · CPA si plaquettes &lt;30 G/L · Traiter la cause</td></tr>
+        </table>
+      </div>
+
+      <!-- SEUILS TRANSFUSIONNELS -->
+      <div class="garde-card garde-orange">
+        <div class="garde-card-head">Seuils transfusionnels</div>
+        <table class="garde-table">
+          <tr><td class="gc-label">CGR</td><td>Hb &lt;<span class="gc-val">7 g/dL</span> (standard) · &lt;<span class="gc-val">8–9 g/dL</span> si cardiopathie/chimio intensive · &lt;<span class="gc-val">10 g/dL</span> si ICP/angor instable · 1 CGR = +1 g/dL Hb</td></tr>
+          <tr><td class="gc-label">CPA</td><td>&lt;<span class="gc-val">10 G/L</span> prophy · &lt;<span class="gc-val">20 G/L</span> si fièvre ou sepsis · &lt;<span class="gc-val">50 G/L</span> geste invasif · &lt;<span class="gc-val">100 G/L</span> neurochirurgie</td></tr>
+          <tr><td class="gc-label">PFC</td><td>TP &lt;40 % + saignement actif · <span class="gc-val">15–20 mL/kg</span> · Délai 30 min décongélation · Ne pas dépasser 4h à TA</td></tr>
+          <tr><td class="gc-label">Fibrinogène</td><td>&lt;<span class="gc-val">1,5 g/L</span> + saignement : <span class="gc-drug">Clottafact®</span> 30–50 mg/kg IV · Contrôle fibrinogène H+1</td></tr>
+          <tr><td class="gc-label">Irradiation CGR/CPA</td><td>Obligatoire si : greffé MO, allogreffe, aplasie sévère (LAL induction, HD), purpura post-transfusionnel, DHPC</td></tr>
+        </table>
+      </div>
+
+      <!-- ANTIDOTES & RESCUE -->
+      <div class="garde-card garde-blue">
+        <div class="garde-card-head">Antidotes & Rescue</div>
+        <table class="garde-table">
+          <tr>
+            <td class="gc-label">MTX HD<br><small style="color:#8b949e">Rescue</small></td>
+            <td>
+              <b>Leucovorine (acide folinique)</b> :<br>
+              · H24 : 15 mg PO × 4/j si protocole standard · Si MTX ≥1 µmol/L à H48 → <span class="gc-alert">100–200 mg/m² IV /3h</span> jusqu'à &lt;0,1 µmol/L<br>
+              · <b>Glucarpidase (Voraxaze®)</b> : 50 U/kg IV si toxicité sévère + élimination insuffisante · Attendre 2h avant leucovorine post-glucarpidase
+            </td>
+          </tr>
+          <tr><td class="gc-label">Ifosfamide / Cyclophosphamide</td><td><span class="gc-drug">Mesna</span> : 60 % dose ifosfamide en 3 prises (H0 / H4 / H8) · Urologie de recours si hématurie persistante</td></tr>
+          <tr><td class="gc-label">Irinotecan – SCI précoce</td><td><span class="gc-drug">Atropine</span> 0,25–0,5 mg SC/IV immédiatement · (diarrhée + sueurs + crampes dans les 24h = SCI cholinergique)</td></tr>
+          <tr><td class="gc-label">Opioïdes</td><td><span class="gc-drug">Naloxone</span> 0,4 mg IV toutes les 2 min jusqu'à réveil (max 10 mg) · Perfusion continue 0,4–0,8 mg/h si dépression respiratoire prolongée</td></tr>
+          <tr><td class="gc-label">Acide valproïque / Carbamazépine</td><td>Nausées + somnolence + chimio : vérifier interaction · Valproate inhibe UGT → ↑ SN-38 (irinotecan toxicité) · <span class="gc-alert">Interférence pharmacocinétique critique</span></td></tr>
+        </table>
+      </div>
+
+      <!-- EXTRAVASATION -->
+      <div class="garde-card garde-purple">
+        <div class="garde-card-head">Extravasation cytostatiques — Conduite à tenir</div>
+        <table class="garde-table">
+          <tr>
+            <td class="gc-label" style="color:#f85149">VÉSICANTS</td>
+            <td>
+              <b>Anthracyclines (doxorubicine, épirubicine, daunorubicine)</b> :<br>
+              Arrêt immédiat · Aspiration résiduelle · Marquer les contours · <span class="gc-alert">Refroidir 15–20 min × 4/j × 1–2 j</span> · <span class="gc-drug">Dexrazoxane (Savene®)</span> : J1 <b>1000 mg/m²</b> IV 1–2h, J2 <b>1000 mg/m²</b>, J3 <b>500 mg/m²</b> — à débuter dans les <b>6h</b> · Ne pas appliquer DMSO si dexrazoxane
+            </td>
+          </tr>
+          <tr>
+            <td class="gc-label" style="color:#f85149"></td>
+            <td>
+              <b>Vinca-alcaloïdes (vincristine, vinorelbine, vinblastine)</b> :<br>
+              Arrêt · Aspiration · <span class="gc-alert">Chaleur locale 15–20 min × 4/j</span> (jamais froid) · <span class="gc-drug">Hyaluronidase</span> 150–1500 UI SC en couronne si disponible
+            </td>
+          </tr>
+          <tr>
+            <td class="gc-label" style="color:#f85149"></td>
+            <td><b>Paclitaxel / Docétaxel</b> : Arrêt · Aspiration · Refroidir · Pas d'antidote spécifique · Surveillance nécrose retardée</td>
+          </tr>
+          <tr>
+            <td class="gc-label" style="color:#e3b341">IRRITANTS</td>
+            <td><b>Carboplatine, oxaliplatine, étoposide</b> : Arrêt · Aspiration · Refroidir · Surveillance · Pas d'antidote systématique · Douleur/érythème locaux</td>
+          </tr>
+          <tr>
+            <td class="gc-label" style="color:#8b949e">NON VÉSICANTS</td>
+            <td>Bléomycine, cyclophosphamide, méthotrexate dilué · Arrêt · Surveillance · Pas de traitement spécifique</td>
+          </tr>
+          <tr><td class="gc-label gc-alert">INTERDIT IV</td><td><span class="gc-alert">VINCRISTINE (et tous vinca) : JAMAIS intrathécal — MORTEL</span></td></tr>
+        </table>
+      </div>
+
+      <!-- CRS & ICANS -->
+      <div class="garde-card garde-teal">
+        <div class="garde-card-head">CRS & ICANS (CAR-T / Bispecifiques)</div>
+        <table class="garde-table">
+          <thead><tr style="color:#8b949e;font-size:0.7rem"><td>Grade</td><td>CRS — Critères</td><td>CRS — Traitement</td><td>ICANS — Critères</td><td>ICANS — Traitement</td></tr></thead>
+          <tr>
+            <td class="gc-val">1</td>
+            <td>Fièvre ≥38°C</td>
+            <td>Paracétamol + surveillance</td>
+            <td>ICE 7–9</td>
+            <td>Surveillance · Lévétiracétam prophylactique</td>
+          </tr>
+          <tr>
+            <td class="gc-val">2</td>
+            <td>Hypotension répondant aux fluides · O2 ≤6 L/min</td>
+            <td><span class="gc-drug">Tocilizumab 8 mg/kg IV</span> (max 800 mg) · Fluides · O2</td>
+            <td>ICE 3–6 · confusion · léthargie</td>
+            <td><span class="gc-drug">Dexaméthasone 10 mg IV /6h</span></td>
+          </tr>
+          <tr>
+            <td class="gc-val gc-alert">3</td>
+            <td>Vasopresseurs nécessaires · O2 &gt;6 L/min</td>
+            <td>Tocilizumab + <span class="gc-drug">Dexaméthasone 10 mg IV /6h</span> · Réanimation</td>
+            <td>ICE 0–2 · désorientation · agitation</td>
+            <td><span class="gc-drug">Dexaméthasone 20 mg IV /6h</span> · Convulsions : lévétiracétam IV</td>
+          </tr>
+          <tr>
+            <td class="gc-val gc-alert">4</td>
+            <td>Vasopresseurs multiples · VM</td>
+            <td>Tocilizumab + <span class="gc-drug">Méthylprednisolone 1 g/j IV</span> · SI</td>
+            <td>ICE 0 · coma · convulsions</td>
+            <td><span class="gc-drug">Méthylprednisolone 1 g/j IV</span> · Neurologie urgente</td>
+          </tr>
+          <tr><td colspan="5" style="color:#8b949e;font-size:0.7rem;padding:6px 10px">Tocilizumab max 3 doses/épisode · Si pas de réponse après 2 doses CRS → siltuximab 11 mg/kg IV · Tocilizumab disponible avant toute infusion CAR-T/bispecifique (min 2 flacons)</td></tr>
+        </table>
+      </div>
+
+      <!-- VOIES INTERDITES & ALERTES -->
+      <div class="garde-card garde-red">
+        <div class="garde-card-head">Alertes absolues — Voies & Associations interdites</div>
+        <table class="garde-table">
+          <tr><td class="gc-label gc-alert">MORTEL</td><td><span class="gc-alert">Vinca-alcaloïdes (vincristine, vinorelbine…) : JAMAIS INTRATHECAL</span> — arrêt cardiorespiratoire immédiat</td></tr>
+          <tr><td class="gc-label gc-alert">STOP</td><td>MTX HD + AINS, TMP-SMX, ciprofloxacine haute dose → risque toxicité rénale et hématologique létale · Arrêt <b>obligatoire avant cure</b></td></tr>
+          <tr><td class="gc-label gc-alert">STOP</td><td>5-FU / Capécitabine + Brivudine (antivirale) → <b>surdosage 5-FU fatal</b> · Délai 4 semaines après brivudine</td></tr>
+          <tr><td class="gc-label" style="color:#e3b341">Attention</td><td>Venetoclax + azoles (kétoconazole, voriconazole, fluconazole) → ↑ exposition × 6–7 · Réduire dose venetoclax ou changer antifongique</td></tr>
+          <tr><td class="gc-label" style="color:#e3b341">Attention</td><td>Imatinib + millepertuis → ↓ imatinib 30–40 % · <b>Arrêt millepertuis obligatoire</b></td></tr>
+          <tr><td class="gc-label" style="color:#e3b341">Attention</td><td>Cyclophosphamide + allopurinol → ↑ myélosuppression · ajuster doses</td></tr>
+          <tr><td class="gc-label" style="color:#e3b341">Attention</td><td>Anti-PD1 + corticoïdes >10 mg/j pred. → ↓ efficacité immunothérapie · éviter sauf irAE</td></tr>
+          <tr><td class="gc-label" style="color:#e3b341">Attention</td><td>Capécitabine + AVK → ↑↑ INR · Relais HBPM recommandé · Surveillance INR × 2/sem si maintien AVK</td></tr>
+        </table>
+      </div>
+
+      <!-- ANTIEMESE & G-CSF -->
+      <div class="garde-card garde-green">
+        <div class="garde-card-head">Antiémèse de secours & G-CSF</div>
+        <table class="garde-table">
+          <tr><td class="gc-label">Schéma HE (haut)</td><td><span class="gc-drug">Ondansétron 8 mg IV</span> + <span class="gc-drug">Dexaméthasone 12 mg IV</span> + <span class="gc-drug">Aprépitant 125 mg PO</span> J1 · puis aprépi 80 mg J2-J3 · ± <span class="gc-drug">Olanzapine 2,5–5 mg PO</span></td></tr>
+          <tr><td class="gc-label">Schéma ME (modéré)</td><td><span class="gc-drug">Ondansétron 8 mg IV</span> + <span class="gc-drug">Dexaméthasone 8 mg IV</span> · ± aprépitant selon facteurs de risque patient</td></tr>
+          <tr><td class="gc-label">Nausées réfractaires</td><td><span class="gc-drug">Dropéridol 1,25 mg IV</span> (ECG avant) · ou <span class="gc-drug">Métoclopramide 10 mg IV</span> /6h · ou <span class="gc-drug">Halopéridol 1 mg PO/SC</span> (soins palliatifs)</td></tr>
+          <tr><td class="gc-label">Filgrastim (G-CSF)</td><td>5 µg/kg/j SC · Démarrer H+24 à H+72 post-chimio · Jusqu'à PNN &gt;1 G/L × 2j consécutifs · Non recommandé pendant chimio</td></tr>
+          <tr><td class="gc-label">Lénograstim</td><td>150 µg/m²/j SC · Modalités identiques · CI : leucémie myéloïde active</td></tr>
+          <tr><td class="gc-label">Pegfilgrastim</td><td>6 mg SC × 1 dose (H+24 à H+72) · 1 injection = cycle complet · Non si cicles &lt;14j</td></tr>
+        </table>
+      </div>
+
+      <!-- SCORE MASCC simplifié -->
+      <div class="garde-card garde-orange">
+        <div class="garde-card-head">Score MASCC — Aplasie fébrile ambulatoire ?</div>
+        <div style="padding:12px 16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.78rem;margin-bottom:12px">
+            <div class="mascc-item"><span class="gc-val">+5</span> Symptômes légers ou absents</div>
+            <div class="mascc-item"><span class="gc-val">+3</span> Symptômes modérés (⚠ exclusif avec +5)</div>
+            <div class="mascc-item"><span class="gc-val">+4</span> Pas d'hypotension (PAS &gt;90)</div>
+            <div class="mascc-item"><span class="gc-val">+4</span> Pas de BPCO</div>
+            <div class="mascc-item"><span class="gc-val">+3</span> Tumeur solide / lymphome sans ATCD fongique</div>
+            <div class="mascc-item"><span class="gc-val">+3</span> Pas de déshydratation</div>
+            <div class="mascc-item"><span class="gc-val">+3</span> Patient ambulatoire au début fièvre</div>
+            <div class="mascc-item"><span class="gc-val">+2</span> Âge &lt;60 ans</div>
+          </div>
+          <div style="display:flex;gap:16px;font-size:0.82rem">
+            <div style="background:#3fb95022;border:1px solid #3fb950;border-radius:8px;padding:8px 14px;flex:1;text-align:center">
+              <div style="color:#3fb950;font-weight:800;font-size:1rem">≥ 21 points</div>
+              <div style="color:#c9d1d9;margin-top:4px">Risque faible — Ambulatoire envisageable</div>
+              <div style="color:#8b949e;font-size:0.7rem;margin-top:2px">Amox-clav 1g × 3/j + Ciprofloxacine 500 mg × 2/j PO</div>
+            </div>
+            <div style="background:#f8514922;border:1px solid #f85149;border-radius:8px;padding:8px 14px;flex:1;text-align:center">
+              <div style="color:#f85149;font-weight:800;font-size:1rem">&lt; 21 points</div>
+              <div style="color:#c9d1d9;margin-top:4px">Risque élevé — Hospitalisation</div>
+              <div style="color:#8b949e;font-size:0.7rem;margin-top:2px">Pipéracilline-tazobactam IV ± glycopeptide</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOSES SPÉCIALES GARDE -->
+      <div class="garde-card garde-blue">
+        <div class="garde-card-head">Doses de référence rapides — Garde</div>
+        <table class="garde-table">
+          <tr><td class="gc-label">Dexaméthasone IS aiguë</td><td><span class="gc-drug">Hydrocortisone hémisuccinate 100 mg IV</span> bolus → <b>200 mg/24h IVSE</b> + NaCl 0,9% 1 L/h</td></tr>
+          <tr><td class="gc-label">Œdème cérébral (métastases)</td><td><span class="gc-drug">Dexaméthasone 8–16 mg IV</span> bolus → 4 mg × 4/j · Mannitol 20% 0,5–1 g/kg IV/15 min si engagement imminent</td></tr>
+          <tr><td class="gc-label">Zolédronique (ostéoporose)</td><td>5 mg IV/15 min 1×/an · Clairance &gt;35 mL/min · Vit D + Ca2+ avant · Bilan dentaire préalable</td></tr>
+          <tr><td class="gc-label">Rasburicase (TLS)</td><td>0,2 mg/kg IV × 1 (ou 3–7,5 mg dose fixe) · CI : G6PD — méthémoglobinémie · Tube sur glace (dégradation rapide)</td></tr>
+          <tr><td class="gc-label">Allopurinol</td><td>100–300 mg/j PO · Adapté si IR · Interférence azathioprine (↓ dose 75%) · Démarrer 24–48h avant chimio</td></tr>
+          <tr><td class="gc-label">Ondansétron IV max</td><td>8 mg × 3/j IV · Allongement QT si dose unique &gt;32 mg · Éviter si QTc &gt;500 ms ou hypokaliémie</td></tr>
+        </table>
+      </div>
+
+    </div><!-- fin garde-grid -->
+  </div><!-- fin garde-panel -->
+
+</div><!-- fin frames -->
+
+<script>
+const tabs   = document.querySelectorAll('.tab');
+const frames = document.querySelectorAll('iframe');
+const homePanel      = document.getElementById('home-panel');
+const protoPanel     = document.getElementById('proto-panel');
+const checklistPanel = document.getElementById('checklist-panel');
+const gardePanel     = document.getElementById('garde-panel');
+
+// Tab 0 = accueil (div), Tab 1 = flashcards (f0), Tab 2 = fiches (f1)
+// Tab 3 = proto-panel (div), Tab 4 = checklist-panel (div), Tab 5 = garde-panel (div)
+const TAB_TO_FRAME = { 1:0, 2:1 };
+
+function switchTab(idx) {
+  tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+  const frameIdx = TAB_TO_FRAME[idx];
+  frames.forEach((f, i) => f.classList.toggle('active', frameIdx !== undefined && i === frameIdx));
+  homePanel.classList.toggle('active',      idx === 0);
+  protoPanel.classList.toggle('active',     idx === 3);
+  checklistPanel.classList.toggle('active', idx === 4);
+  gardePanel.classList.toggle('active',     idx === 5);
+  if (idx === 0) buildHomePanel();
+  document.getElementById('search-results').style.display = 'none';
+  try { localStorage.setItem('onco_active_tab', idx); } catch(e) {}
+}
+
+// Restaurer dernier onglet visité
+(function() {
+  try {
+    const saved = localStorage.getItem('onco_active_tab');
+    if (saved !== null) switchTab(parseInt(saved));
+  } catch(e) {}
+})();
+
+// Back-to-top scroll
+protoPanel.addEventListener('scroll', () => {
+  const btn = document.getElementById('proto-top-btn');
+  if (btn) btn.classList.toggle('visible', protoPanel.scrollTop > 300);
+});
+
+//  RECHERCHE GLOBALE 
+// Index statique des topics fiches + protocoles pour la recherche
+const SEARCH_INDEX = [
+  // Flash Cards
+  {label:'Calcul de dose – Formule Calvert AUC',tab:1,cat:'Flash Cards'},
+  {label:'DPD / DPYD – Test obligatoire avant 5-FU / Capécitabine',tab:1,cat:'Flash Cards'},
+  {label:'UGT1A1*28 – Irinotécan pharmacogénomique',tab:1,cat:'Flash Cards'},
+  {label:'RECIST 1.1 – Critères de réponse tumorale',tab:1,cat:'Flash Cards'},
+  {label:'Score G8 – Dépistage onco-gériatrique',tab:1,cat:'Flash Cards'},
+  {label:'Urgences oncologiques – Hypercalcémie, SIADH, SVCS',tab:1,cat:'Flash Cards'},
+  // Fiches
+  {label:'Fiche – Cancer du Sein',tab:2,cat:'Fiches'},
+  {label:'Fiche – Cancer du Poumon CBNPC',tab:2,cat:'Fiches'},
+  {label:'Fiche – Cancer Colorectal – RAS, BRAF, MSI',tab:2,cat:'Fiches'},
+  {label:'Fiche – Cancer de la Prostate – PSA, CRPC',tab:2,cat:'Fiches'},
+  {label:'Fiche – Cancers Urologiques – Rein, Urothélial',tab:2,cat:'Fiches'},
+  {label:"Fiche – Cancer de l'Ovaire – BRCA, PARP",tab:2,cat:'Fiches'},
+  {label:'Fiche – Cancer Gastrique – HER2, PD-L1 CPS',tab:2,cat:'Fiches'},
+  {label:'Fiche – Cancer du Pancréas – FOLFIRINOX, BRCA',tab:2,cat:'Fiches'},
+  {label:'Fiche – Cancers VADS – HPV, cetuximab',tab:2,cat:'Fiches'},
+  {label:'Fiche – Mélanome – BRAF V600E, Nivolumab+Ipi',tab:2,cat:'Fiches'},
+  {label:'Fiche – Lymphomes – LDGCB, Hodgkin, LF',tab:2,cat:'Fiches'},
+  {label:'Fiche – Leucémies – LMA, LMC, LLC',tab:2,cat:'Fiches'},
+  {label:'Fiche – Myélome Multiple – VRd, Daratumumab, CAR-T',tab:2,cat:'Fiches'},
+  {label:'Fiche – Immunothérapie – Checkpoint inhibiteurs',tab:2,cat:'Fiches'},
+  {label:'Fiche – CAR-T & MTI – CRS, ICANS',tab:2,cat:'Fiches'},
+  {label:'Fiche – Oncogénétique & PARP – BRCA, HRD',tab:2,cat:'Fiches'},
+  {label:'Fiche – CDK4/6 – Palbociclib, Ribociclib, Abémaciclib',tab:2,cat:'Fiches'},
+  {label:'Fiche – ADC – T-DXd, Enfortumab védotin',tab:2,cat:'Fiches'},
+  {label:'Fiche – Pharmacocinétique oncologie',tab:2,cat:'Fiches'},
+  {label:'Fiche – Thérapies ciblées & Kinases',tab:2,cat:'Fiches'},
+  {label:'Fiche – Toxicités cutanées anticancéreux',tab:2,cat:'Fiches'},
+  {label:'Fiche – Interactions médicamenteuses oncologie',tab:2,cat:'Fiches'},
+  {label:'Fiche – Urgences oncologiques',tab:2,cat:'Fiches'},
+  {label:'Fiche – Oncogériatrie',tab:2,cat:'Fiches'},
+  {label:'Fiche – Anatomo-Pathologie – HER2 testing',tab:2,cat:'Fiches'},
+  // Protocoles – Sein
+  {label:'Protocole – Sein HER2+ – Pertuzumab + Trastuzumab + Taxane',tab:3,cat:'Protocoles'},
+  {label:'Protocole – Sein HER2-low – T-DXd (Enhertu) DESTINY-Breast04',tab:3,cat:'Protocoles'},
+  {label:'Protocole – Sein TNBC – Pembrolizumab + Chimio (KEYNOTE-522)',tab:3,cat:'Protocoles'},
+  {label:'Protocole – Sein RH+/HER2- – CDK4/6 + Hormonothérapie',tab:3,cat:'Protocoles'},
+  // Protocoles – Poumon
+  {label:'Protocole – CBNPC Non-squameux – Pembrolizumab, KEYNOTE-189, PACIFIC durvalumab',tab:3,cat:'Protocoles'},
+  {label:'Protocole – CBNPC Squameux – Pembrolizumab KEYNOTE-407',tab:3,cat:'Protocoles'},
+  {label:'Protocole – CBNPC Mutations pilotes – EGFR Osimertinib, ALK Alectinib, KRAS Sotorasib, BRAF Dabrafenib, HER2 T-DXd, ROS1 Crizotinib',tab:3,cat:'Protocoles'},
+  {label:'Protocole – CPC – Atézolizumab + Carboplatine + Etoposide (IMpower133)',tab:3,cat:'Protocoles'},
+  {label:'Protocole – CBNPC Adjuvant – Osimertinib ADAURA, Pembrolizumab PEARLS, Nivolumab CheckMate816',tab:3,cat:'Protocoles'},
+  {label:'Protocole – Mésothéliome – Nivolumab + Ipilimumab (CheckMate 743), Pemetrexed',tab:3,cat:'Protocoles'},
+  // Protocoles – Digestif
+  {label:'Protocole – Cancer Colorectal – FOLFOX, FOLFIRI, BRAF V600E Encorafenib, MSI-H Pembrolizumab',tab:3,cat:'Protocoles'},
+  {label:'Protocole – Cancer Gastrique – ToGA HER2, KEYNOTE-811, CheckMate 649, FLOT',tab:3,cat:'Protocoles'},
+  {label:'Protocole – Cancer du Pancréas – FOLFIRINOX, Gemcitabine nab-Paclitaxel, Olaparib BRCA',tab:3,cat:'Protocoles'},
+  {label:'Protocole – CHC – Atézolizumab + Bevacizumab (IMbrave150), Sorafénib',tab:3,cat:'Protocoles'},
+  // Protocoles – Gynéco
+  {label:"Protocole – Cancer de l'Ovaire – Carboplatine Paclitaxel, PARP inhibiteurs, Bevacizumab",tab:3,cat:'Protocoles'},
+  {label:"Protocole – Cancer de l'Endomètre – Pembrolizumab + Lénvatinib, Dostarlimab",tab:3,cat:'Protocoles'},
+  {label:'Protocole – Cancer du Col utérin – Cisplatine + RT, Pembrolizumab',tab:3,cat:'Protocoles'},
+  // Protocoles – Urologie
+  {label:'Protocole – Cancer de la Prostate – Enzalutamide, Abiratérone, Docétaxel, Lu-PSMA, Radium-223',tab:3,cat:'Protocoles'},
+  {label:'Protocole – Cancer du Rein – Nivolumab + Cabozantinib, Pembrolizumab + Axitinib',tab:3,cat:'Protocoles'},
+  {label:'Protocole – Cancer Urothélial – EV + Pembrolizumab, Cisplatine Gemcitabine, Erdafitinib FGFR3',tab:3,cat:'Protocoles'},
+  // Protocoles – VADS
+  {label:'Protocole – VADS – Cisplatine + RT, KEYNOTE-048 Pembrolizumab, EXTREME Cetuximab, UCNT Gemcitabine',tab:3,cat:'Protocoles'},
+  // Protocoles – Mélanome
+  {label:'Protocole – Mélanome – Nivolumab + Ipilimumab (CheckMate 067), Dabrafenib + Trametinib BRAF V600E',tab:3,cat:'Protocoles'},
+  // Protocoles – Thyroïde
+  {label:'Protocole – Thyroïde – Lénvatinib (CDT réfractaire radioiode), Selpercatinib (RET médullaire), Dabrafenib ATC',tab:3,cat:'Protocoles'},
+  // Protocoles – Sarcomes
+  {label:'Protocole – Sarcomes – Doxorubicine, AI, Gemcitabine-Docétaxel, Imatinib GIST',tab:3,cat:'Protocoles'},
+  // Protocoles – Hémato
+  {label:'Protocole – LDGCB / Lymphome B agressif – R-CHOP, R-DA-EPOCH, CAR-T anti-CD19',tab:3,cat:'Protocoles'},
+  {label:'Protocole – Lymphome de Hodgkin – ABVD, BV-AVD (ECHELON-1), Pembrolizumab rechute',tab:3,cat:'Protocoles'},
+  {label:'Protocole – Lymphome Folliculaire – R-CHOP, Mosunetuzumab, CAR-T',tab:3,cat:'Protocoles'},
+  {label:'Protocole – Lymphome T périphérique CD30+ – BV-CHP (ECHELON-2)',tab:3,cat:'Protocoles'},
+  {label:'Protocole – LMA – 7+3, Midostaurine FLT3, Vénétoclax + Azacitidine (VIALE-A)',tab:3,cat:'Protocoles'},
+  {label:'Protocole – LMC – Imatinib, Dasatinib, Nilotinib, Ponatinib, Asciminib, TFR',tab:3,cat:'Protocoles'},
+  {label:'Protocole – LLC – Venetoclax + Obinutuzumab (CLL14), Ibrutinib, Acalabrutinib, TLS',tab:3,cat:'Protocoles'},
+  {label:'Protocole – Myélome Multiple – DVRd, DRd (MAIA), CAR-T anti-BCMA, Teclistamab',tab:3,cat:'Protocoles'},
+  // Molécules clés
+  {label:'Osimertinib (Tagrisso) – EGFR TKI 3G',tab:3,cat:'Protocoles'},
+  {label:'Pembrolizumab (Keytruda) – anti-PD1',tab:3,cat:'Protocoles'},
+  {label:'Trastuzumab Déruxtécan T-DXd (Enhertu)',tab:3,cat:'Protocoles'},
+  {label:'Venetoclax – BCL-2 inhibiteur, TLS',tab:3,cat:'Protocoles'},
+  {label:'Olaparib (Lynparza) – PARP inhibiteur',tab:3,cat:'Protocoles'},
+  {label:'Durvalumab (Imfinzi) – PACIFIC stade III CBNPC',tab:3,cat:'Protocoles'},
+  {label:'Lénvatinib – Cancer thyroïde réfractaire radioiode',tab:3,cat:'Protocoles'},
+  {label:'Radium-223 (Xofigo) – Prostate M+ osseuses',tab:3,cat:'Protocoles'},
+  {label:'177Lu-PSMA (Pluvicto) – Prostate VISION',tab:3,cat:'Protocoles'},
+  {label:'Selpercatinib – RET fusionné/muté',tab:3,cat:'Protocoles'},
+  // Checklists
+  // Checklists
+  {label:'Checklist – Pré-ICI (Immunothérapie checkpoint)',tab:4,cat:'Checklists'},
+  {label:'Checklist – Pré-Cisplatine',tab:4,cat:'Checklists'},
+  {label:'Checklist – Pré-MTX Haute Dose',tab:4,cat:'Checklists'},
+  {label:'Checklist – Pré-Blinatumomab',tab:4,cat:'Checklists'},
+  {label:'Checklist – Pré-T-DXd (Enhertu)',tab:4,cat:'Checklists'},
+  {label:'Checklist – Pré-Anthracyclines',tab:4,cat:'Checklists'},
+  {label:'Checklist – Pré-Bévacizumab',tab:4,cat:'Checklists'},
+  {label:'Checklist – Pré-CAR-T cells',tab:4,cat:'Checklists'},
+  // Fiche de garde
+  {label:'Garde – Urgences oncologiques (hypercalcémie, TLS, compression médullaire)',tab:5,cat:'Garde'},
+  {label:'Garde – Extravasation vésicants (dexrazoxane, anthracyclines)',tab:5,cat:'Garde'},
+  {label:'Garde – CRS et ICANS (CAR-T, bispecifiques)',tab:5,cat:'Garde'},
+  {label:'Garde – Antidotes (leucovorine MTX, mesna, atropine)',tab:5,cat:'Garde'},
+  {label:'Garde – Seuils transfusionnels (CGR, CPA, PFC, fibrinogène)',tab:5,cat:'Garde'},
+  {label:'Garde – Voies interdites et associations dangereuses',tab:5,cat:'Garde'},
+  // Nouvelles fiches pharmacologie
+  {label:'Fiche – Antiémèse : HEC/MEC/NK1/Setrons/Olanzapine',tab:2,cat:'Fiches'},
+  {label:'Fiche – Reconstitution & Stabilité des anticancéreux',tab:2,cat:'Fiches'},
+];
+
+const CAT_COLORS = {'Flash Cards':'#1f6feb','Fiches':'#8250df','Protocoles':'#c65d00','Checklists':'#2e7d32','Garde':'#da3633'};
+
+function runGlobalSearch(q) {
+  const box = document.getElementById('search-results');
+  if (!q || q.length < 2) { box.style.display='none'; return; }
+  const terms = q.toLowerCase().split(' ').filter(Boolean);
+  const results = SEARCH_INDEX.filter(item =>
+    terms.every(t => item.label.toLowerCase().includes(t) || item.cat.toLowerCase().includes(t))
+  ).slice(0, 12);
+  if (!results.length) { box.style.display='none'; return; }
+  box.style.display = 'block';
+  box.innerHTML = results.map(r => `
+    <div onclick="switchTab(${r.tab});document.getElementById('global-search').value='';document.getElementById('search-results').style.display='none';"
+      style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #21262d;transition:background 0.1s;"
+      onmouseover="this.style.background='#21262d'" onmouseout="this.style.background=''">
+      <div style="font-size:0.82rem;font-weight:600;color:#e6edf3">${r.label}</div>
+      <div style="font-size:0.72rem;margin-top:2px;padding:1px 7px;border-radius:10px;display:inline-block;background:${CAT_COLORS[r.cat]}22;color:${CAT_COLORS[r.cat]}">${r.cat}</div>
+    </div>`).join('');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#global-search') && !e.target.closest('#search-results'))
+    document.getElementById('search-results').style.display = 'none';
+});
+
+//  FILTRE PAR GROUPE 
+const GROUPS = {
+  all:      'Tous',
+  sein:     'Sein',
+  poumon:   'Poumon',
+  ccr:      'Colorectal',
+  gastrique:'Gastrique',
+  gyneco:   'Gynéco',
+  uro:      'Urologie',
+  hemato:   'Hémato',
+  digestif: 'Digestif',
+  vads:     'VADS',
+  melanome: 'Mélanome',
+  sarcomes: 'Sarcomes',
+  thyroide: 'Thyroïde',
+  neuro:    'Neurologie',
+};
+
+function buildFilterChips() {
+  const wrap = document.getElementById('filter-chips');
+  const allCards = document.querySelectorAll('.cancer-card');
+  Object.entries(GROUPS).forEach(([k, label]) => {
+    const count = k === 'all'
+      ? allCards.length
+      : [...allCards].filter(c => c.dataset.group === k).length;
+    const btn = document.createElement('button');
+    btn.className = 'chip' + (k === 'all' ? ' active' : '');
+    btn.textContent = count > 0 ? `${label} (${count})` : label;
+    btn.dataset.group = k;
+    btn.onclick = () => {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      filterByGroup(k);
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function updateCounter(visible, total) {
+  let el = document.getElementById('proto-counter');
+  if (!el) {
+    el = document.createElement('span');
+    el.id = 'proto-counter';
+    el.style.cssText = 'font-size:0.72rem;color:#8b949e;margin-left:12px;';
+    document.querySelector('.proto-header h2').appendChild(el);
+  }
+  el.textContent = visible === total ? `${total} protocoles` : `${visible} / ${total} protocoles`;
+}
+
+function filterByGroup(group) {
+  const search = document.querySelector('.proto-search').value.toLowerCase();
+  const cards = document.querySelectorAll('.cancer-card');
+  let visible = 0;
+  cards.forEach(card => {
+    const matchGroup = group === 'all' || card.dataset.group === group;
+    const matchSearch = !search || card.textContent.toLowerCase().includes(search);
+    const show = matchGroup && matchSearch;
+    card.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+  updateCounter(visible, cards.length);
+}
+
+// Appelée depuis la fiche : ouvre le panel proto filtré sur le bon groupe
+function highlightProtoGroup(groupId) {
+  switchTab(3);
+  setTimeout(() => {
+    document.querySelector('.proto-search').value = '';
+    document.querySelectorAll('.chip').forEach(c => {
+      const match = c.dataset.group === groupId;
+      c.classList.toggle('active', match);
+    });
+    filterByGroup(groupId || 'all');
+    const first = document.querySelector('.cancer-card:not(.hidden)');
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('proto-panel').scrollTop = 0;
+  }, 80);
+}
+
+function filterProto(val) {
+  const activeChip = document.querySelector('.chip.active');
+  const group = activeChip ? activeChip.dataset.group : 'all';
+  const search = val.toLowerCase();
+  const cards = document.querySelectorAll('.cancer-card');
+  let visible = 0;
+  cards.forEach(card => {
+    const matchGroup = group === 'all' || card.dataset.group === group;
+    const matchSearch = !search || card.textContent.toLowerCase().includes(search);
+    const show = matchGroup && matchSearch;
+    card.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+  updateCounter(visible, cards.length);
+}
+
+//  Collapse bilan / monitoring rows 
+function initCollapsibleRows() {
+  document.querySelectorAll('.proto-table tr').forEach(row => {
+    const td = row.querySelector('td.bilan, td.monitor');
+    if (!td) return;
+    const label = td.textContent.trim();
+    const contentTd = row.cells[1];
+    if (!contentTd) return;
+    // Créer un wrapper collapsible
+    const btn = document.createElement('button');
+    btn.className = 'collapse-toggle open';
+    btn.title = 'Replier';
+    btn.textContent = '';
+    td.appendChild(btn);
+    row.classList.add('collapsible-row');
+    const wrapper = document.createElement('tr');
+    wrapper.className = 'collapsible-content';
+    wrapper.innerHTML = `<td colspan="2" style="padding:0">${contentTd.innerHTML}</td>`;
+    // Vider l'original et remplacer par le wrapper
+    contentTd.innerHTML = '';
+    row.parentNode.insertBefore(wrapper, row.nextSibling);
+    btn.onclick = () => {
+      const isOpen = btn.classList.toggle('open');
+      btn.title = isOpen ? 'Replier' : 'Déplier';
+      wrapper.classList.toggle('hidden-row', !isOpen);
+    };
+  });
+}
+
+buildFilterChips();
+initCollapsibleRows();
+
+// Lien protocole → fiche de révision
+const PROTO_TO_FICHE = [
+  { pattern: /mésothéliome/i,           id: 'mesotheliome' },
+  { pattern: /glioblastome|GBM/i,        id: 'glioblastome' },
+  { pattern: /GIST/i,                    id: 'gist' },
+  { pattern: /CHC|hépatocarcinome/i,     id: 'chc' },
+  { pattern: /neuroendocrine|TNE/i,      id: 'tne' },
+  { pattern: /œsophage|oesophage/i,      id: 'esophage' },
+  { pattern: /endomètre/i,               id: 'endometre' },
+  { pattern: /ovaire/i,                  id: 'ovaire' },
+  { pattern: /pancréas/i,                id: 'pancreas' },
+  { pattern: /LAL/i,                     id: 'lal' },
+  { pattern: /LMA|LMC|LLC/i,             id: 'leucemies' },
+  { pattern: /myélome/i,                 id: 'myelome' },
+  { pattern: /Hodgkin|lymphome/i,        id: 'lymphomes' },
+  { pattern: /sein/i,                    id: 'sein' },
+  { pattern: /CBNPC|CPC|poumon/i,        id: 'poumon' },
+  { pattern: /colorectal|côlon/i,        id: 'ccr' },
+  { pattern: /gastrique/i,               id: 'gastrique' },
+  { pattern: /urothélial/i,              id: 'uro' },
+  { pattern: /rein/i,                    id: 'uro' },
+  { pattern: /prostate/i,               id: 'prostate' },
+  { pattern: /VADS/i,                    id: 'vads' },
+  { pattern: /mélanome/i,                id: 'melanome' },
+  { pattern: /thyroïde/i,                id: 'thyroide' },
+  { pattern: /sarcome/i,                 id: 'sarcomes' },
+];
+
+function goToFiche(topicId, e) {
+  if (e) e.stopPropagation();
+  switchTab(2);
+  setTimeout(() => {
+    const f1 = document.getElementById('f1');
+    if (f1 && f1.contentWindow && f1.contentWindow.selectTopic) {
+      f1.contentWindow.selectTopic(topicId);
+    }
+  }, 150);
+}
+
+function toggleFavProto(title, group, btn) {
+  try {
+    let favs = JSON.parse(localStorage.getItem('onco_favs_proto') || '[]');
+    const idx = favs.findIndex(p => p.title === title);
+    if (idx >= 0) { favs.splice(idx, 1); btn.textContent = '☆'; btn.classList.remove('active'); }
+    else { favs.push({title, group}); btn.textContent = '★'; btn.classList.add('active'); }
+    localStorage.setItem('onco_favs_proto', JSON.stringify(favs));
+  } catch(e) {}
+}
+
+function injectCardButtons() {
+  let favProtos = [];
+  try { favProtos = JSON.parse(localStorage.getItem('onco_favs_proto') || '[]'); } catch(e) {}
+  const favTitles = favProtos.map(p => p.title);
+
+  document.querySelectorAll('.cancer-card').forEach(card => {
+    const titleEl = card.querySelector('.cc-title');
+    if (!titleEl) return;
+    const title = titleEl.textContent.trim();
+    const head = card.querySelector('.cc-head');
+    if (!head) return;
+
+    if (!head.querySelector('.proto-star-btn')) {
+      const isFav = favTitles.includes(title);
+      const star = document.createElement('button');
+      star.className = 'proto-star-btn' + (isFav ? ' active' : '');
+      star.title = 'Épingler ce protocole';
+      star.textContent = isFav ? '★' : '☆';
+      star.onclick = (e) => { e.stopPropagation(); toggleFavProto(title, card.dataset.group, star); };
+      head.appendChild(star);
+    }
+
+    if (!head.querySelector('.fiche-link-btn')) {
+      let ficheId = null;
+      for (const rule of PROTO_TO_FICHE) {
+        if (rule.pattern.test(title)) { ficheId = rule.id; break; }
+      }
+      if (ficheId) {
+        const btn = document.createElement('button');
+        btn.className = 'fiche-link-btn';
+        btn.textContent = 'Fiche';
+        btn.title = 'Voir la fiche de révision';
+        btn.onclick = (e) => goToFiche(ficheId, e);
+        head.appendChild(btn);
+      }
+    }
+  });
+}
+injectCardButtons();
+
+// Vue compacte protocoles
+let compactMode = false;
+function toggleCompact() {
+  compactMode = !compactMode;
+  const btn = document.getElementById('btn-compact');
+  btn.classList.toggle('on', compactMode);
+  btn.textContent = compactMode ? 'Vue détaillée' : 'Vue express';
+  document.querySelectorAll('.proto-table tr').forEach(row => {
+    const hide = compactMode && (
+      row.classList.contains('collapsible-content') ||
+      row.classList.contains('collapsible-row') ||
+      row.querySelector('td.po')
+    );
+    row.style.display = hide ? 'none' : '';
+  });
+}
+
+// Page d'accueil
+function buildHomePanel() {
+  const content = document.getElementById('home-content');
+  let srsData = {}, cardStates = {}, recentFiches = [], favFiches = [], favProtos = [];
+  try {
+    srsData     = JSON.parse(localStorage.getItem('onco_srs')           || '{}');
+    cardStates  = JSON.parse(localStorage.getItem('onco_states')        || '{}');
+    recentFiches = JSON.parse(localStorage.getItem('onco_recent_fiches')|| '[]');
+    favFiches   = JSON.parse(localStorage.getItem('onco_favs_fiches')   || '[]');
+    favProtos   = JSON.parse(localStorage.getItem('onco_favs_proto')    || '[]');
+  } catch(e) {}
+
+  const now = Date.now();
+  const dueToday   = Object.values(srsData).filter(s => s.due <= now).length;
+  const knownCount = Object.values(cardStates).filter(v => v === true).length;
+  const totalCards = 166;
+  const knownPct   = Math.round((knownCount / totalCards) * 100);
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Bonne matinée' : hour < 18 ? 'Bon après-midi' : 'Bonne soirée';
+
+  const statClass = dueToday > 10 ? 'home-stat-urgent' : dueToday === 0 ? 'home-stat-ok' : '';
+
+  const favFichesHtml = favFiches.length ? `
+    <div class="home-section">
+      <div class="home-section-title">Fiches épinglées</div>
+      <div class="home-chips">${favFiches.map(f=>`<button class="home-chip home-chip-fiche" onclick="goToFiche('${f.id}',null)">${f.icon} ${f.label}</button>`).join('')}</div>
+    </div>` : '';
+
+  const favProtosHtml = favProtos.length ? `
+    <div class="home-section">
+      <div class="home-section-title">Protocoles épinglés</div>
+      <div class="home-chips">${favProtos.map(p=>`<button class="home-chip home-chip-proto" onclick="highlightProtoGroup('${p.group}')">${p.title}</button>`).join('')}</div>
+    </div>` : '';
+
+  const recentHtml = recentFiches.length ? `
+    <div class="home-section">
+      <div class="home-section-title">Consultées récemment</div>
+      <div class="home-chips">${recentFiches.slice(0,5).map(f=>`<button class="home-chip home-chip-fiche" onclick="goToFiche('${f.id}',null)">${f.icon} ${f.label}</button>`).join('')}</div>
+    </div>` : '';
+
+  content.innerHTML = `
+    <div class="home-greeting">${greeting}</div>
+    <div class="home-date">${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div>
+    <div class="home-stats-row">
+      <div class="home-stat ${statClass}" onclick="switchTab(1)">
+        <div class="hs-num">${dueToday}</div>
+        <div class="hs-lbl">Cartes à réviser aujourd'hui</div>
+        <div class="hs-action">Commencer →</div>
+      </div>
+      <div class="home-stat" onclick="switchTab(1)">
+        <div class="hs-num">${knownCount}</div>
+        <div class="hs-lbl">Cartes maîtrisées</div>
+        <div class="hs-sub">${knownPct}% du total</div>
+      </div>
+      <div class="home-stat" onclick="switchTab(5)">
+        <div class="hs-icon">🚨</div>
+        <div class="hs-lbl">Fiche de garde</div>
+        <div class="hs-action">Ouvrir →</div>
+      </div>
+      <div class="home-stat" onclick="switchTab(4)">
+        <div class="hs-icon">✓</div>
+        <div class="hs-lbl">Checklists pré-chimio</div>
+        <div class="hs-action">Ouvrir →</div>
+      </div>
+    </div>
+    ${favFichesHtml}${favProtosHtml}${recentHtml}
+    <div class="home-section">
+      <div class="home-section-title">Accès rapide</div>
+      <div class="home-chips">
+        <button class="home-chip home-chip-proto" onclick="switchTab(3)">Protocoles</button>
+        <button class="home-chip home-chip-fiche" onclick="goToFiche('reconstitution',null)">Reconstitution & Stabilité</button>
+        <button class="home-chip home-chip-fiche" onclick="goToFiche('antiemese',null)">Antiémèse</button>
+        <button class="home-chip home-chip-fiche" onclick="goToFiche('urgences',null)">Urgences oncologiques</button>
+        <button class="home-chip home-chip-fiche" onclick="goToFiche('im',null)">Interactions médicamenteuses</button>
+      </div>
+    </div>`;
+}
+buildHomePanel();
+
+updateCounter(document.querySelectorAll('.cancer-card').length, document.querySelectorAll('.cancer-card').length);
+
+// Raccourci clavier : 1=Accueil 2=Flash 3=Fiches 4=Protocoles 5=Checklists 6=Garde
+document.addEventListener('keydown', e => {
+  if (document.querySelector('.proto-search') === document.activeElement) return;
+  if (document.activeElement && ['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  if (e.key === '1') switchTab(0);
+  else if (e.key === '2') switchTab(1);
+  else if (e.key === '3') switchTab(2);
+  else if (e.key === '4') switchTab(3);
+  else if (e.key === '5') switchTab(4);
+  else if (e.key === '6') switchTab(5);
+});
+
+// ─── CHECKLISTS JS ───────────────────────────────────────────────────────────
+const CHECKLISTS = [
+  {
+    id:'ici', label:'Pré-ICI (Immunothérapie)', badge:'Anti-PD1/PD-L1/CTLA-4',
+    color:'#8250df',
+    items:[
+      {t:'Bilan auto-immun de base : NFS, BH, créatinine, TSH, glycémie à jeun', critical:true},
+      {t:'Cortisol 8h si doute insuffisance surrénalienne (surtout anti-CTLA-4)'},
+      {t:'ATCD maladies auto-immunes documentés (risque rechute irAE)'},
+      {t:'Statut HBV/HCV (AgHBs, Ac anti-HBc, Ac anti-HCV) avant démarrage', critical:true},
+      {t:'Echocardiographie si cardiopathie connue ou anti-CTLA-4 + anti-PD1'},
+      {t:'Information patient sur irAE et signes d\'alerte (consultation rapide)'},
+      {t:'Prescription carnet de suivi immunothérapie remis au patient'},
+      {t:'Vérifier absence de CI absolue : corticothérapie systémique >10 mg/j prednisone'},
+      {t:'Greffé d\'organe solide : information sur risque rejet (contre-indication relative)'},
+      {t:'Bilan thyroïdien complet si anti-PD1 (T3, T4L, TSH, Ac anti-TPO)'},
+    ]
+  },
+  {
+    id:'cisplatine', label:'Pré-Cisplatine', badge:'Platine I',
+    color:'#1f6feb',
+    items:[
+      {t:'DFG ≥ 60 mL/min (Cockcroft) — CI si <50 mL/min', critical:true},
+      {t:'Audiogramme si dose cumulative élevée ou facteurs de risque', critical:true},
+      {t:'Bilan neurologique : neuropathie préexistante (dose-limiting si grade 2)'},
+      {t:'Hydratation per-cure : NaCl 0,9% 1 L avant et après cisplatine ≥ 75 mg/m²', critical:true},
+      {t:'MgSO4 et KCl systématiques dans les poches d\'hydratation (prévention hypomagnésémie)'},
+      {t:'Antiémèse haute : sétron + dexaméthasone + aprépitant + olanzapine'},
+      {t:'Bilan pré-cure : NFS, iono, créatinine, magnésémie, audiométrie (si cumulatif)'},
+      {t:'DPYD : statut testé avant 5-FU associé (cisplatine + 5-FU)'},
+      {t:'Contraception efficace documentée (homme et femme)'},
+    ]
+  },
+  {
+    id:'mtx-hd', label:'Pré-MTX Haute Dose', badge:'≥ 1 g/m²',
+    color:'#da3633',
+    items:[
+      {t:'DFG ≥ 60 mL/min — STRICT, pas d\'adaptation', critical:true},
+      {t:'pH urinaire ≥ 7 avant perfusion (alcalinisation urinaire H-12 à H+72)', critical:true},
+      {t:'Diurèse ≥ 100 mL/h pendant et après perfusion', critical:true},
+      {t:'Pas d\'AINS ni aspirine 48h avant et jusqu\'à méthotrexatémie < 0,1 µmol/L', critical:true},
+      {t:'Pas d\'IPP fortes doses si possible (oméprazole interagit modérément)'},
+      {t:'Acide folique/folinique prescrit (rescue leucovorine H+24 ou H+36 selon protocole)'},
+      {t:'Méthotrexatémie J1, J2, J3 (ou H24, H48, H72) — cinétique validée', critical:true},
+      {t:'Bilan pré-cure : NFS, BH, créatinine, iono, albumine'},
+      {t:'Pas de triméthoprime-sulfaméthoxazole pendant cure'},
+      {t:'Prévoir séquence leucovorine rescue si retard élimination (MTX ≥ 1 µmol/L H48)'},
+    ]
+  },
+  {
+    id:'blinatu', label:'Pré-Blinatumomab', badge:'BiTE CD19/CD3',
+    color:'#0e7490',
+    items:[
+      {t:'Prophylaxie corticoïde obligatoire : dexaméthasone 20 mg IV 1h avant J1 cycle 1', critical:true},
+      {t:'Prophylaxie anti-épileptique si ATCD neurologique ou risque SNC (lévétiracétam)', critical:true},
+      {t:'Hospitalisation J1-J3 cycle 1 pour surveillance CRS/neurotoxicité', critical:true},
+      {t:'Information patient : signes neurologiques (confusion, tremblements) = urgence'},
+      {t:'Bilan pré-cure : NFS (lymphocytes++), BH, CRP, ferritine, fibrinogène (syndrome activation macrophagique)'},
+      {t:'Statut CMV (réactivation possible sous immunosuppression)'},
+      {t:'Voie veineuse centrale de qualité (perfusion continue 28j par pompe)'},
+      {t:'Antécédents neuro-psychiatriques documentés (risque ICANS)'},
+      {t:'Exclure ponction lombaire <48h avant (interférence LCR)'},
+    ]
+  },
+  {
+    id:'tdxd', label:'Pré-T-DXd (Enhertu)', badge:'ADC HER2',
+    color:'#c026d3',
+    items:[
+      {t:'Bilan pulmonaire de base : TDM thorax + EFR avant cycle 1', critical:true},
+      {t:'Saturation O2 repos documentée (alerte si <95%)', critical:true},
+      {t:'Information patient sur pneumopathie interstitielle : dyspnée = STOP et consultation urgente', critical:true},
+      {t:'FEVG echocardiographie avant (cardiotoxicité liée à la plateforme deruxtecan)'},
+      {t:'NFS pré-cure (neutropénie fréquente, nadir J14-J21)'},
+      {t:'Antiémèse systématique : potentiel modéré-haut (sétron ± dexaméthasone)'},
+      {t:'Test HER2 validé (IHC + ISH) dans dossier', critical:true},
+      {t:'Contraception efficace documentée (toxicité embryo-foetale)'},
+      {t:'Statut HBV (réactivation sous chimiothérapie systémique)'},
+    ]
+  },
+  {
+    id:'anthracyclines', label:'Pré-Anthracyclines', badge:'Doxorubicine · Épirubicine',
+    color:'#e3b341',
+    items:[
+      {t:'Echocardiographie ou FEVG isotopique avant J1 (baseline)', critical:true},
+      {t:'FEVG ≥ 50% avant démarrage — CI si < 45%', critical:true},
+      {t:'Dose cumulée documentée : doxorubicine max ~550 mg/m² (300 mg/m² si ATCD RT médiastin)', critical:true},
+      {t:'Antécédents cardiaques : HTA, coronaropathie, FA → cardiologie avis'},
+      {t:'Pas de trastuzumab concomitant si FEVG limite'},
+      {t:'Vesicant : s\'assurer voie veineuse fonctionnelle · protocole extravasation disponible', critical:true},
+      {t:'Prévention hyperuricémie : allopurinol si hémato ou lyse attendue'},
+      {t:'Information patient : alopécie quasi-certaine, cardiotoxicité tardive'},
+      {t:'Antiémèse : potentiel haut (doxorubicine ≥ 60 mg/m²) → quadruplet'},
+    ]
+  },
+  {
+    id:'bevacizumab', label:'Pré-Bévacizumab', badge:'Anti-VEGF',
+    color:'#1a7f37',
+    items:[
+      {t:'Délai post-chirurgie ≥ 28 jours (risque hémorragie et défaut cicatrisation)', critical:true},
+      {t:'Tension artérielle contrôlée ≤ 150/100 mmHg avant injection', critical:true},
+      {t:'Bandelette urinaire (protéinurie) : rapport Pr/Creat urinaire si 2+ ou plus', critical:true},
+      {t:'Bilan coagulation (CI si anticoagulation thérapeutique à haut risque)'},
+      {t:'Anamnèse : ATCD AVC/AIT, IDM < 6 mois (CI absolue)', critical:true},
+      {t:'Chirurgie programmée : suspension bévacizumab 4-8 sem avant'},
+      {t:'Pas d\'application intranasale de vasoconstricteurs (syndrgie épistaxis)'},
+      {t:'Surveillance : TA, dipstick urinaire, signes de perforation digestive'},
+      {t:'Fistule récente ou trajet fistuleux : CI relative (risque aggravation)'},
+    ]
+  },
+  {
+    id:'cart', label:'Pré-CAR-T cells', badge:'Thérapie cellulaire',
+    color:'#7c3aed',
+    items:[
+      {t:'Lymphodéplétion : fludarabine + cyclophosphamide J-5 à J-3', critical:true},
+      {t:'Score CRS pré-traitement documenté (ferritine, LDH, IL-6 si possible)', critical:true},
+      {t:'Tocilizumab disponible en unité (minimum 2 flacons avant infusion)', critical:true},
+      {t:'Dexaméthasone disponible en urgence pour ICANS grade ≥2', critical:true},
+      {t:'Pas de corticoïdes systémiques J-7 à J+30 sauf urgence (diminuent activité CAR-T)'},
+      {t:'Bilan neuro de base : ICANS grille (orientation, date, langage)', critical:true},
+      {t:'Hospitalisation ≥ 7 jours après infusion en unité formée CRS/ICANS'},
+      {t:'Pas de conduite automobile ≥ 8 semaines post-infusion (neurotoxicité)'},
+      {t:'Information aidant/famille : signes CRS (fièvre, hypotension) et ICANS (confusion)'},
+      {t:'Statut CMV, HHV6, EBV (réactivation fréquente post-CAR-T)'},
+      {t:'Pas d\'ibrutinib ou BTKi en cours : risque cardiotoxicité + interfère CAR-T (à discuter)'},
+    ]
+  },
+];
+
+function buildChecklists() {
+  const container = document.getElementById('cl-container');
+  CHECKLISTS.forEach(cl => {
+    const card = document.createElement('div');
+    card.className = 'cl-card';
+    const itemsHTML = cl.items.map((item, i) => `
+      <div class="cl-item${item.critical?' critical':''}" id="${cl.id}-${i}" onclick="toggleCL('${cl.id}',${i})">
+        <div class="cl-checkbox"></div>
+        <div class="cl-item-text">${item.t}</div>
+      </div>`).join('');
+    card.innerHTML = `
+      <div class="cl-card-head" style="--cl-color:${cl.color}">
+        <div>
+          <h3>${cl.label}</h3>
+          <span class="cl-badge" style="--cl-color:${cl.color};background:${cl.color}22;color:${cl.color}">${cl.badge}</span>
+        </div>
+      </div>
+      <div class="cl-body">
+        <div class="cl-progress"><div class="cl-progress-bar" id="${cl.id}-bar" style="width:0%"></div></div>
+        <div class="cl-progress-label" id="${cl.id}-label">0 / ${cl.items.length} éléments validés</div>
+        ${itemsHTML}
+        <button class="cl-reset" onclick="resetCL('${cl.id}',${cl.items.length})">Réinitialiser</button>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function toggleCL(clId, idx) {
+  const item = document.getElementById(`${clId}-${idx}`);
+  item.classList.toggle('checked');
+  updateCLProgress(clId);
+}
+
+function updateCLProgress(clId) {
+  const cl = CHECKLISTS.find(c => c.id === clId);
+  const checked = document.querySelectorAll(`[id^="${clId}-"]:not([id$="-bar"]):not([id$="-label"]).checked`).length;
+  const total = cl.items.length;
+  const pct = total ? (checked / total * 100) : 0;
+  const bar = document.getElementById(`${clId}-bar`);
+  const label = document.getElementById(`${clId}-label`);
+  if (bar) bar.style.width = pct + '%';
+  if (label) label.textContent = `${checked} / ${total} éléments validés`;
+}
+
+function resetCL(clId, count) {
+  for (let i = 0; i < count; i++) {
+    const item = document.getElementById(`${clId}-${i}`);
+    if (item) item.classList.remove('checked');
+  }
+  updateCLProgress(clId);
+}
+
+buildChecklists();
+</script>
+
+</body>
+</html>
